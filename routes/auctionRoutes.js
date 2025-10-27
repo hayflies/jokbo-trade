@@ -7,7 +7,15 @@ const {
 } = require('mongoose');
 const { body, validationResult } = require('express-validator');
 const { ensureAuthenticated } = require('../middleware/auth');
-const { listAuctions, createAuction, getAuctionById, placeBid, closeExpiredAuctions } = require('../services/auctionService');
+const {
+  listAuctions,
+  createAuction,
+  getAuctionById,
+  placeBid,
+  closeExpiredAuctions,
+  listUserAuctions,
+  listUserNotifications
+} = require('../services/auctionService');
 const { findUserById, recordReputation } = require('../models/userModel');
 const { listBidLogs } = require('../models/bidLogModel');
 
@@ -84,8 +92,20 @@ router.get('/', async (req, res, next) => {
   try {
     await closeExpiredAuctions();
     const page = parseInt(req.query.page || '1', 10);
-    const { items, total, pages } = await listAuctions({ page, limit: 20 });
-    res.render('auctions/index', { auctions: items, total, pages, currentPage: page });
+    const [openResult, closedResult] = await Promise.all([
+      listAuctions({ page, limit: 20, status: 'OPEN' }),
+      listAuctions({ page, limit: 20, status: 'CLOSED' })
+    ]);
+
+    res.render('auctions/index', {
+      openAuctions: openResult.items,
+      closedAuctions: closedResult.items,
+      openTotal: openResult.total,
+      openPages: openResult.pages,
+      closedTotal: closedResult.total,
+      closedPages: closedResult.pages,
+      currentPage: page
+    });
   } catch (error) {
     next(error);
   }
@@ -199,6 +219,26 @@ router.post(
     }
   }
 );
+
+router.get('/my', ensureAuthenticated, async (req, res, next) => {
+  try {
+    await closeExpiredAuctions();
+    const { open, closed } = await listUserAuctions(req.session.user.id);
+    res.render('auctions/mine', { openAuctions: open, closedAuctions: closed });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get('/notifications', ensureAuthenticated, async (req, res, next) => {
+  try {
+    await closeExpiredAuctions();
+    const notifications = await listUserNotifications(req.session.user.id);
+    res.render('auctions/notifications', { notifications });
+  } catch (error) {
+    next(error);
+  }
+});
 
 /**
  * @swagger

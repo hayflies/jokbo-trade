@@ -132,7 +132,10 @@ async function listUserAuctions(userId) {
     Auction.find({ sellerId: userId, status: 'OPEN' }).sort(buildSort('OPEN')),
     Auction.find({ sellerId: userId, status: 'CLOSED' }).sort(buildSort('CLOSED'))
   ]);
-  return { open: open.map((auction) => auction.toObject()), closed: closed.map((auction) => auction.toObject()) };
+  return {
+    open: open.map((auction) => auction.toObject({ virtuals: true })),
+    closed: closed.map((auction) => auction.toObject({ virtuals: true }))
+  };
 }
 
 async function listUserNotifications(userId) {
@@ -142,7 +145,7 @@ async function listUserNotifications(userId) {
   }).sort(buildSort('CLOSED'));
 
   return auctions.map((auctionDoc) => {
-    const auction = auctionDoc.toObject();
+    const auction = auctionDoc.toObject({ virtuals: true });
     const isSeller = auction.sellerId === userId;
     const isWinner = auction.winnerId === userId;
     const hasWinner = !!auction.winnerId;
