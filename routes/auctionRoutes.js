@@ -256,17 +256,40 @@ router.get('/notifications', ensureAuthenticated, async (req, res, next) => {
  *         description: Auction details
  */
 router.get('/:id', ensureAuthenticated, ensureValidAuctionId, async (req, res, next) => {
-  try {
-    await closeExpiredAuctions();
-    const auction = await getAuctionById(req.params.id);
-    if (!auction) {
-      return res.status(404).render('error', { error: new Error('경매를 찾을 수 없습니다.') });
+    try {
+        await closeExpiredAuctions();
+        const auctionDoc = await getAuctionById(req.params.id);
+        if (!auctionDoc) {
+            return res.status(404).render('error', { error: new Error('경매를 찾을 수 없습니다.') });
+        }
+        const auction = auctionDoc.toObject({ virtuals: true });
+        const currentUser = req.session.user;
+        const currentUserIdStr = String(currentUser.id);
+        const sellerIdStr = String(auction.sellerId);
+        const winnerIdStr = auction.winnerId == null ? null : String(auction.winnerId);
+        const isSeller = sellerIdStr === currentUserIdStr;
+        const isWinner = winnerIdStr !== null && winnerIdStr === currentUserIdStr;
+        const isAuctionOpen = auction.status === 'OPEN' && new Date(auction.endTime) > new Date();
+        const hasBid = Array.isArray(auction.bids)
+            ? auction.bids.some((bid) => String(bid.bidderId) === currentUserIdStr)
+            : false;
+        const canBid = isAuctionOpen && !isSeller;
+        const canRate = auction.status === 'CLOSED' && hasBid && !isSeller;
+        const allowDownload = auction.status === 'CLOSED' && (isSeller || hasBid);
+        const bidLogs = await listBidLogs(auction.id);
+        res.render('auctions/show', {
+            auction,
+            bidLogs,
+            isSeller,
+            isWinner,
+            canBid,
+            canRate,
+            allowDownload,
+            userHasBid: hasBid
+        });
+    } catch (error) {
+        next(error);
     }
-    const bidLogs = await listBidLogs(auction.id);
-    res.render('auctions/show', { auction, bidLogs });
-  } catch (error) {
-    next(error);
-  }
 });
 
 /**
@@ -437,6 +460,15 @@ router.get('/:id/download', ensureAuthenticated, ensureValidAuctionId, async (re
         const auction = await getAuctionById(req.params.id);
         if (!auction) {
             return respondAuctionNotFound(req, res);
+        }
+        const requesterId = String(req.session.user.id);
+        const isSeller = String(auction.sellerId) === requesterId;
+        const hasBid = Array.isArray(auction.bids)
+            ? auction.bids.some((bid) => String(bid.bidderId) === requesterId)
+            : false;
+        if (!isSeller && !hasBid) {
+            req.flash('error', '입찰에 참여한 사용자만 자료를 내려받을 수 있습니다.');
+            return res.redirect(`/auctions/${req.params.id}`);
         }
         if (auction.status !== 'CLOSED') {
             req.flash('error', '경매 종료 후에만 자료를 내려받을 수 있습니다.');

@@ -149,6 +149,33 @@ button:hover {
   font-weight: 500;
 }
 
+.number-input {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.number-input input {
+  width: 100%;
+  text-align: right;
+}
+
+.step-button {
+  background: #e4ebf5;
+  color: var(--text);
+  border-radius: 8px;
+  width: 2.5rem;
+  height: 2.5rem;
+  font-size: 1.25rem;
+  line-height: 1;
+  padding: 0;
+}
+
+.step-button:hover {
+  background: #d0dae7;
+}
+
 input,
 textarea,
 select {

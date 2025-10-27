@@ -7,6 +7,7 @@
   const rateAllowed = typeof canRate === 'undefined' ? false : canRate;
   const bidLogList = typeof bidLogs !== 'undefined' && Array.isArray(bidLogs) ? bidLogs : [];
   const activeUser = typeof currentUser === 'undefined' ? null : currentUser;
+  const bidderView = typeof userHasBid === 'undefined' ? false : userHasBid;
 %>
 <section
   class="card"
@@ -14,6 +15,7 @@
   data-auction-id="<%= auction.id %>"
   data-current-user-id="<%= activeUser ? activeUser.id : '' %>"
   data-seller-id="<%= auction.sellerId %>"
+  data-user-has-bid="<%= bidderView ? 'true' : 'false' %>"
 >
   <header class="card-header">
     <h2><%= auction.title %></h2>
@@ -52,7 +54,9 @@
       <%= downloadAllowed ? '' : 'aria-disabled="true"' %>
       >자료 다운로드</a
     >
-    <p class="muted download-hint <%= downloadAllowed ? 'hidden' : '' %>" data-download-hint>경매 종료 후 자료를 내려받을 수 있습니다.</p>
+    <p class="muted download-hint <%= downloadAllowed ? 'hidden' : '' %>" data-download-hint>
+      경매 종료 후 판매자와 입찰에 참여한 사용자만 자료를 내려받을 수 있습니다.
+    </p>
     <p
       class="alert alert-success inline-alert <%= auction.status === 'CLOSED' && winnerView ? '' : 'hidden' %>"
       data-winner-message

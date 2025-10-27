@@ -1,5 +1,111 @@
 (function () {
   document.addEventListener('DOMContentLoaded', function () {
+    const startPriceStepper = document.querySelector('[data-start-price-stepper]');
+    if (startPriceStepper) {
+      const input = startPriceStepper.querySelector('input[data-step-input]');
+      const buttons = startPriceStepper.querySelectorAll('[data-step-change]');
+      const MIN_VALUE = Number(input.getAttribute('min')) || 100;
+      const STEP_VALUE = Number(input.getAttribute('step')) || 100;
+
+      const alignToStep = (raw) => {
+        if (!Number.isFinite(raw)) {
+          return MIN_VALUE;
+        }
+        if (raw < MIN_VALUE) {
+          return MIN_VALUE;
+        }
+        const offset = raw - MIN_VALUE;
+        const remainder = offset % STEP_VALUE;
+        if (remainder === 0) {
+          return raw;
+        }
+        return raw - remainder;
+      };
+
+      const updateValidity = () => {
+        if (!input.value) {
+          input.setCustomValidity('시작가는 100원 단위로 입력해주세요.');
+          return;
+        }
+        const parsed = Number(input.value);
+        if (
+          !Number.isFinite(parsed) ||
+          parsed < MIN_VALUE ||
+          (parsed - MIN_VALUE) % STEP_VALUE !== 0
+        ) {
+          input.setCustomValidity('시작가는 100원 단위로 입력해주세요.');
+        } else {
+          input.setCustomValidity('');
+        }
+      };
+
+      const syncInputValue = () => {
+        if (!input.value) {
+          return;
+        }
+        const parsed = Number(input.value);
+        const normalized = alignToStep(parsed);
+        if (normalized !== parsed) {
+          input.value = normalized;
+        }
+      };
+
+      const applyStep = (delta) => {
+        const base = input.value ? Number(input.value) : MIN_VALUE;
+        const next = alignToStep(base + delta);
+        input.value = next;
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+        updateValidity();
+      };
+
+      if (!input.value) {
+        input.value = MIN_VALUE;
+      } else {
+        syncInputValue();
+      }
+      updateValidity();
+
+      buttons.forEach((button) => {
+        const delta = Number(button.getAttribute('data-step-change'));
+        if (!Number.isFinite(delta)) {
+          return;
+        }
+        button.addEventListener('click', function (event) {
+          event.preventDefault();
+          applyStep(delta);
+        });
+      });
+
+      input.addEventListener('input', function () {
+        if (!input.value) {
+          updateValidity();
+          return;
+        }
+        syncInputValue();
+        updateValidity();
+      });
+
+      input.addEventListener('change', function () {
+        syncInputValue();
+        updateValidity();
+      });
+
+      input.addEventListener('blur', function () {
+        syncInputValue();
+        updateValidity();
+      });
+
+      input.addEventListener('keydown', function (event) {
+        if (event.key === 'ArrowUp') {
+          event.preventDefault();
+          applyStep(STEP_VALUE);
+        } else if (event.key === 'ArrowDown') {
+          event.preventDefault();
+          applyStep(-STEP_VALUE);
+        }
+      });
+    }
+
     if (typeof io === 'undefined') {
       return;
     }
@@ -25,6 +131,7 @@
       const sellerNoBidMessage = auctionDetail.querySelector('[data-seller-no-bid-message]');
       const currentUserId = auctionDetail.getAttribute('data-current-user-id');
       const sellerId = auctionDetail.getAttribute('data-seller-id');
+      let userHasBid = auctionDetail.getAttribute('data-user-has-bid') === 'true';
 
       if (downloadButton) {
         downloadButton.addEventListener('click', function (event) {
@@ -83,7 +190,14 @@
         }
         if (downloadButton) {
           const isClosed = payload.status === 'CLOSED';
-          if (isClosed) {
+          if (payload.bids && currentUserId) {
+            userHasBid = userHasBid || payload.bids.some(function (bid) {
+              return String(bid.bidderId) === currentUserId;
+            });
+          }
+          const isSeller = sellerId && currentUserId && sellerId === currentUserId;
+          const canDownload = isClosed && (isSeller || userHasBid);
+          if (canDownload) {
             downloadButton.classList.remove('is-disabled');
             downloadButton.dataset.downloadAvailable = 'true';
             downloadButton.href = `/auctions/${auctionId}/download`;
