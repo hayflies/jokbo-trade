@@ -1,110 +1,200 @@
 (function () {
   document.addEventListener('DOMContentLoaded', function () {
-    const startPriceStepper = document.querySelector('[data-start-price-stepper]');
-    if (startPriceStepper) {
-      const input = startPriceStepper.querySelector('input[data-step-input]');
-      const buttons = startPriceStepper.querySelectorAll('[data-step-change]');
-      const MIN_VALUE = Number(input.getAttribute('min')) || 100;
-      const STEP_VALUE = Number(input.getAttribute('step')) || 100;
+    const startPriceInput = document.querySelector('[data-start-price-input]');
+    if (startPriceInput) {
+      const feedback = document.querySelector('[data-start-price-feedback]');
+      const minValue = Number(startPriceInput.getAttribute('min')) || 100;
+      const stepValue = Number(startPriceInput.getAttribute('step')) || 100;
+      const invalidMessage = '시작가는 100원 단위의 숫자여야 합니다.';
 
-      const alignToStep = (raw) => {
-        if (!Number.isFinite(raw)) {
-          return MIN_VALUE;
-        }
-        if (raw < MIN_VALUE) {
-          return MIN_VALUE;
-        }
-        const offset = raw - MIN_VALUE;
-        const remainder = offset % STEP_VALUE;
-        if (remainder === 0) {
-          return raw;
-        }
-        return raw - remainder;
-      };
-
-      const updateValidity = () => {
-        if (!input.value) {
-          input.setCustomValidity('시작가는 100원 단위로 입력해주세요.');
+      const toggleFeedback = (show, message) => {
+        if (!feedback) {
           return;
         }
-        const parsed = Number(input.value);
+        if (show) {
+          feedback.textContent = message || invalidMessage;
+          feedback.classList.remove('hidden');
+        } else {
+          feedback.classList.add('hidden');
+        }
+      };
+
+      const validate = () => {
+        const raw = startPriceInput.value;
+        if (!raw) {
+          startPriceInput.setCustomValidity(invalidMessage);
+          toggleFeedback(true);
+          return;
+        }
+        const parsed = Number(raw);
         if (
           !Number.isFinite(parsed) ||
-          parsed < MIN_VALUE ||
-          (parsed - MIN_VALUE) % STEP_VALUE !== 0
+          parsed < minValue ||
+          Math.round(parsed) !== parsed ||
+          parsed % stepValue !== 0
         ) {
-          input.setCustomValidity('시작가는 100원 단위로 입력해주세요.');
+          startPriceInput.setCustomValidity(invalidMessage);
+          toggleFeedback(true);
         } else {
-          input.setCustomValidity('');
+          startPriceInput.setCustomValidity('');
+          toggleFeedback(false);
         }
       };
 
-      const syncInputValue = () => {
-        if (!input.value) {
-          return;
-        }
-        const parsed = Number(input.value);
-        const normalized = alignToStep(parsed);
-        if (normalized !== parsed) {
-          input.value = normalized;
-        }
-      };
+      validate();
+      startPriceInput.addEventListener('input', validate);
+      startPriceInput.addEventListener('blur', validate);
+      startPriceInput.addEventListener('change', validate);
+      startPriceInput.addEventListener('invalid', function () {
+        toggleFeedback(true, startPriceInput.validationMessage || invalidMessage);
+      });
+    }
 
-      const applyStep = (delta) => {
-        const base = input.value ? Number(input.value) : MIN_VALUE;
-        const next = alignToStep(base + delta);
-        input.value = next;
-        input.dispatchEvent(new Event('input', { bubbles: true }));
-        updateValidity();
-      };
+    const starRatings = document.querySelectorAll('[data-star-rating]');
+    starRatings.forEach((container) => {
+      const hiddenInput = container.querySelector('[data-star-rating-value]');
+      const fill = container.querySelector('[data-star-rating-fill]');
+      const status = container.querySelector('[data-star-rating-status]');
+      const controls = Array.from(container.querySelectorAll('[data-rating-value]'));
+      const form = container.closest('form');
+      const MIN_RATING = 0.5;
+      const MAX_RATING = 5;
+      const defaultStatusText = status ? status.textContent : '';
 
-      if (!input.value) {
-        input.value = MIN_VALUE;
-      } else {
-        syncInputValue();
+      if (!hiddenInput || !fill || controls.length === 0) {
+        return;
       }
-      updateValidity();
 
-      buttons.forEach((button) => {
-        const delta = Number(button.getAttribute('data-step-change'));
-        if (!Number.isFinite(delta)) {
+      const formatValue = (value) => {
+        return Number.isInteger(value) ? String(value) : value.toFixed(1);
+      };
+
+      const updateStatus = (value, isError) => {
+        if (!status) {
           return;
         }
-        button.addEventListener('click', function (event) {
+        status.classList.toggle('star-rating__status--error', Boolean(isError));
+        const numeric = Number(value);
+        if (!value || Number.isNaN(numeric)) {
+          status.textContent = isError ? '평점을 선택해주세요.' : defaultStatusText;
+          return;
+        }
+        status.innerHTML = `<strong>${value}</strong>점이 선택되었습니다.`;
+      };
+
+      const updateAria = (value) => {
+        controls.forEach((button) => {
+          const buttonValue = Number(button.getAttribute('data-rating-value'));
+          button.setAttribute('aria-checked', buttonValue === value ? 'true' : 'false');
+        });
+      };
+
+      const updateFill = (value) => {
+        const numeric = Number(value);
+        const safe = Number.isFinite(numeric) ? Math.max(0, Math.min(100, (numeric / MAX_RATING) * 100)) : 0;
+        fill.style.width = `${safe}%`;
+      };
+
+      const setValue = (value, { focusTarget = false } = {}) => {
+        if (!Number.isFinite(value)) {
+          return;
+        }
+        const clamped = Math.min(MAX_RATING, Math.max(MIN_RATING, Math.round(value * 2) / 2));
+        const formatted = formatValue(clamped);
+        hiddenInput.value = formatted;
+        updateFill(clamped);
+        updateStatus(formatted, false);
+        updateAria(clamped);
+        if (focusTarget) {
+          const target = controls.find((button) => Number(button.getAttribute('data-rating-value')) === clamped);
+          if (target) {
+            target.focus();
+          }
+        }
+      };
+
+      const clearValue = () => {
+        hiddenInput.value = '';
+        updateFill(0);
+        updateAria(NaN);
+        updateStatus('', false);
+      };
+
+      const adjustValue = (delta) => {
+        const current = Number(hiddenInput.value);
+        if (!Number.isFinite(current)) {
+          setValue(delta > 0 ? MIN_RATING : MAX_RATING, { focusTarget: true });
+          return;
+        }
+        setValue(current + delta, { focusTarget: true });
+      };
+
+      controls.forEach((button) => {
+        button.addEventListener('click', (event) => {
           event.preventDefault();
-          applyStep(delta);
+          const value = Number(button.getAttribute('data-rating-value'));
+          if (Number(hiddenInput.value) === value) {
+            clearValue();
+            return;
+          }
+          setValue(value);
+          button.setAttribute('aria-checked', 'true');
+        });
+
+        button.addEventListener('mouseenter', () => {
+          const hoverValue = Number(button.getAttribute('data-rating-value'));
+          updateFill(hoverValue);
+        });
+
+        button.addEventListener('mouseleave', () => {
+          updateFill(hiddenInput.value);
+        });
+
+        button.addEventListener('focus', () => {
+          if (!hiddenInput.value) {
+            const focusValue = Number(button.getAttribute('data-rating-value'));
+            updateFill(focusValue);
+          }
+        });
+
+        button.addEventListener('blur', () => {
+          updateFill(hiddenInput.value);
+        });
+
+        button.addEventListener('keydown', (event) => {
+          if (event.key === 'ArrowLeft' || event.key === 'ArrowDown') {
+            event.preventDefault();
+            adjustValue(-0.5);
+          } else if (event.key === 'ArrowRight' || event.key === 'ArrowUp') {
+            event.preventDefault();
+            adjustValue(0.5);
+          } else if (event.key === 'Home') {
+            event.preventDefault();
+            setValue(MIN_RATING, { focusTarget: true });
+          } else if (event.key === 'End') {
+            event.preventDefault();
+            setValue(MAX_RATING, { focusTarget: true });
+          }
         });
       });
 
-      input.addEventListener('input', function () {
-        if (!input.value) {
-          updateValidity();
-          return;
-        }
-        syncInputValue();
-        updateValidity();
-      });
+      if (form) {
+        form.addEventListener('submit', (event) => {
+          if (!hiddenInput.value) {
+            event.preventDefault();
+            updateStatus('평점', true);
+            const firstControl = controls[0];
+            if (firstControl) {
+              firstControl.focus();
+            }
+          }
+        });
+      }
 
-      input.addEventListener('change', function () {
-        syncInputValue();
-        updateValidity();
-      });
-
-      input.addEventListener('blur', function () {
-        syncInputValue();
-        updateValidity();
-      });
-
-      input.addEventListener('keydown', function (event) {
-        if (event.key === 'ArrowUp') {
-          event.preventDefault();
-          applyStep(STEP_VALUE);
-        } else if (event.key === 'ArrowDown') {
-          event.preventDefault();
-          applyStep(-STEP_VALUE);
-        }
-      });
-    }
+      updateFill(hiddenInput.value);
+      updateAria(Number(hiddenInput.value));
+      updateStatus(hiddenInput.value, false);
+    });
 
     if (typeof io === 'undefined') {
       return;

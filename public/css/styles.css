@@ -116,6 +116,17 @@ button {
   font-weight: 600;
 }
 
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
+}
+
 .btn-primary {
   background: var(--primary);
   color: #fff;
@@ -149,31 +160,97 @@ button:hover {
   font-weight: 500;
 }
 
-.number-input {
+.form-feedback {
+  font-size: 0.9rem;
+  color: var(--danger);
+  margin: 0;
+}
+
+.star-rating {
   display: grid;
-  grid-template-columns: auto 1fr auto;
-  align-items: center;
   gap: 0.5rem;
 }
 
-.number-input input {
-  width: 100%;
-  text-align: right;
-}
-
-.step-button {
-  background: #e4ebf5;
-  color: var(--text);
-  border-radius: 8px;
-  width: 2.5rem;
-  height: 2.5rem;
-  font-size: 1.25rem;
+.star-rating__input {
+  position: relative;
+  width: max-content;
+  font-size: 2rem;
   line-height: 1;
-  padding: 0;
 }
 
-.step-button:hover {
-  background: #d0dae7;
+.star-rating__base,
+.star-rating__fill {
+  display: block;
+  letter-spacing: 0.4rem;
+  user-select: none;
+}
+
+.star-rating__base {
+  color: var(--border);
+}
+
+.star-rating__fill {
+  position: absolute;
+  inset: 0;
+  color: var(--secondary);
+  width: 0%;
+  overflow: hidden;
+  transition: width 0.2s ease;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.star-rating__controls {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  z-index: 2;
+}
+
+.star-rating__star {
+  flex: 1;
+  position: relative;
+}
+
+.star-rating__half {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 50%;
+  padding: 0;
+  margin: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: transparent;
+}
+
+.star-rating__half:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.star-rating__half--left {
+  left: 0;
+}
+
+.star-rating__half--right {
+  right: 0;
+}
+
+.star-rating__status {
+  font-size: 0.9rem;
+  color: var(--muted);
+  margin: 0;
+}
+
+.star-rating__status strong {
+  color: var(--secondary);
+}
+
+.star-rating__status--error {
+  color: var(--danger);
+  font-weight: 600;
 }
 
 input,

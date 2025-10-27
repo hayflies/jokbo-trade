@@ -393,7 +393,19 @@ router.post(
   '/:id/rate',
   ensureAuthenticated,
   ensureValidAuctionId,
-  [body('score').isInt({ min: 1, max: 5 }).withMessage('평점은 1에서 5 사이여야 합니다.')],
+  [
+    body('score')
+      .isFloat({ min: 1, max: 5 })
+      .withMessage('평점은 1에서 5 사이여야 합니다.')
+      .custom((value) => {
+        const numeric = Number(value);
+        if (!Number.isFinite(numeric)) {
+          return false;
+        }
+        return Math.round(numeric * 2) === numeric * 2;
+      })
+      .withMessage('평점은 0.5점 단위로 입력해주세요.')
+  ],
   async (req, res, next) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -417,14 +429,22 @@ router.post(
           json: () => res.json({ message: 'Cannot rate your own auction' })
         });
       }
+      const normalizedScore = Number(req.body.score);
+      if (!Number.isFinite(normalizedScore)) {
+        req.flash('error', '평점을 확인할 수 없습니다. 다시 시도해주세요.');
+        return res.status(400).format({
+          html: () => res.redirect(`/auctions/${req.params.id}`),
+          json: () => res.json({ message: 'Invalid score supplied' })
+        });
+      }
       await recordReputation({
         reviewerId: req.session.user.id,
         targetId: auction.sellerId,
-        score: Number(req.body.score),
-        comment: req.body.comment || ''
+        score: normalizedScore,
+        comment: req.body.comment ? String(req.body.comment).trim() : ''
       });
       const updatedSeller = await findUserById(auction.sellerId);
-      if (req.session.user.id === updatedSeller.id) {
+      if (updatedSeller && req.session.user && Number(req.session.user.id) === Number(updatedSeller.id)) {
         req.session.user.reputationScore = Number(updatedSeller.reputation_score);
         req.session.user.reputationCount = updatedSeller.reputation_count;
       }

@@ -126,9 +126,39 @@
     <h3>판매자 평가</h3>
     <% if (rateAllowed) { %>
     <form action="/auctions/<%= auction.id %>/rate" method="post" class="form-grid">
-      <label>평점 (1-5)
-        <input type="number" name="score" min="1" max="5" required />
-      </label>
+      <fieldset class="star-rating" data-star-rating>
+        <legend class="sr-only">평점 선택</legend>
+        <input type="hidden" name="score" value="" data-star-rating-value />
+        <div class="star-rating__input" aria-hidden="true">
+          <span class="star-rating__base">☆☆☆☆☆</span>
+          <span class="star-rating__fill" data-star-rating-fill>★★★★★</span>
+          <div class="star-rating__controls" role="radiogroup" aria-label="평점 선택">
+            <% for (let star = 1; star <= 5; star++) { %>
+            <div class="star-rating__star">
+              <button
+                type="button"
+                class="star-rating__half star-rating__half--left"
+                data-rating-value="<%= (star - 0.5).toFixed(1) %>"
+                role="radio"
+                aria-checked="false"
+                aria-label="<%= (star - 0.5).toFixed(1) %>점 선택"
+              ></button>
+              <button
+                type="button"
+                class="star-rating__half star-rating__half--right"
+                data-rating-value="<%= star.toFixed(1) %>"
+                role="radio"
+                aria-checked="false"
+                aria-label="<%= star.toFixed(1) %>점 선택"
+              ></button>
+            </div>
+            <% } %>
+          </div>
+        </div>
+        <p class="star-rating__status" data-star-rating-status aria-live="polite">
+          별을 선택해 평점을 입력해주세요. 반 개 단위 선택이 가능합니다.
+        </p>
+      </fieldset>
       <label>한 줄 평
         <textarea name="comment" rows="2" placeholder="거래 경험을 공유해주세요"></textarea>
       </label>
