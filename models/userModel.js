@@ -50,7 +50,12 @@ async function recordReputation({ reviewerId, targetId, score, comment }) {
     [targetId]
   );
 
-  const avgScore = summary[0].avgScore || 0;
+  const avgScoreRaw = summary[0].avgScore;
+  let avgScore = 0;
+  if (avgScoreRaw !== null && avgScoreRaw !== undefined) {
+    const numericAvg = Number(avgScoreRaw);
+    avgScore = Number.isFinite(numericAvg) ? numericAvg : 0;
+  }
   const ratingCount = summary[0].ratingCount || 0;
 
   await pool.query(
