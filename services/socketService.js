@@ -17,13 +17,21 @@ function broadcastBidUpdate(auction) {
     auctionId: auction.id,
     currentPrice: auction.currentPrice,
     bids: auction.bids,
-    endTime: auction.endTime
+    endTime: auction.endTime,
+    status: auction.status,
+    winnerId: auction.winnerId,
+    winnerNickname: auction.winnerNickname,
+    winningBidAmount: auction.winningBidAmount
   });
   io.emit('auctionListUpdate', {
     auctionId: auction.id,
     currentPrice: auction.currentPrice,
     endTime: auction.endTime,
-    bids: auction.bids
+    bids: auction.bids,
+    status: auction.status,
+    winnerId: auction.winnerId,
+    winnerNickname: auction.winnerNickname,
+    winningBidAmount: auction.winningBidAmount
   });
 }
 

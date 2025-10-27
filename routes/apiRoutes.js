@@ -163,6 +163,13 @@ router.post(
       if (auction.sellerId === req.session.user.id) {
         return res.status(400).json({ message: 'Cannot rate your own auction' });
       }
+      if (auction.status !== 'CLOSED') {
+        return res.status(400).json({ message: 'Auction must be closed before rating' });
+      }
+      const userHasBid = auction.bids.some((bid) => bid.bidderId === req.session.user.id);
+      if (!userHasBid) {
+        return res.status(400).json({ message: 'Only bidders can rate this auction' });
+      }
       await recordReputation({
         reviewerId: req.session.user.id,
         targetId: auction.sellerId,

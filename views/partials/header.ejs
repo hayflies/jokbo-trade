@@ -15,10 +15,13 @@
         <h1 class="logo"><a href="/">Jokbo Trade</a></h1>
         <nav>
           <ul>
+            <li><a href="/auctions">경매 홈</a></li>
             <% if (currentUser) { %>
+            <li><a href="/auctions/my">내 경매</a></li>
+            <li><a href="/auctions/notifications">알림</a></li>
+            <li><a href="/auctions/new">경매 등록</a></li>
             <li><span class="nickname"><%= currentUser.nickname %> (<%= currentUser.reputationScore || 0 %>★)</span></li>
             <li><a href="/profile">내 프로필</a></li>
-            <li><a href="/auctions/new">경매 등록</a></li>
             <li>
               <form action="/logout" method="post" class="inline">
                 <button type="submit">로그아웃</button>
@@ -35,21 +38,26 @@
         </nav>
       </div>
     </header>
-    <main class="container">
-      <% if (flash.error) { %>
-      <div class="alert alert-error">
-        <% flash.error.forEach(function (message) { %>
-        <p><%= message %></p>
-        <% }); %>
-      </div>
-      <% } %>
-      <% if (flash.success) { %>
-      <div class="alert alert-success">
-        <% flash.success.forEach(function (message) { %>
-        <p><%= message %></p>
-        <% }); %>
-      </div>
-      <% } %>
-    </main>
-  </body>
-</html>
+      <main class="container">
+        <% if (flash.error) { %>
+        <div class="alert alert-error">
+          <% flash.error.forEach(function (message) { %>
+          <p><%= message %></p>
+          <% }); %>
+        </div>
+        <% } %>
+
+        <% if (flash.warning) { %>
+        <div class="alert alert-warning">
+          <% flash.warning.forEach(function (message) { %>
+          <p><%= message %></p>
+          <% }); %>
+        </div>
+        <% } %>
+        <% if (flash.success) { %>
+        <div class="alert alert-success">
+          <% flash.success.forEach(function (message) { %>
+          <p><%= message %></p>
+          <% }); %>
+        </div>
+        <% } %>

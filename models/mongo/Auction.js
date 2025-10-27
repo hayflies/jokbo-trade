@@ -23,7 +23,11 @@ const auctionSchema = new mongoose.Schema(
     fileOriginalName: { type: String, required: true },
     bids: [bidSchema],
     createdAt: { type: Date, default: Date.now },
-    status: { type: String, default: 'OPEN', enum: ['OPEN', 'CLOSED'] }
+    status: { type: String, default: 'OPEN', enum: ['OPEN', 'CLOSED'] },
+    winnerId: { type: Number, default: null },
+    winnerNickname: { type: String, default: null },
+    winningBidAmount: { type: Number, default: null },
+    closedAt: { type: Date, default: null }
   },
   {
     timestamps: true

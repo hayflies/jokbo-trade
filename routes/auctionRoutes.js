@@ -2,6 +2,9 @@ const express = require('express');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const {
+  Types: { ObjectId }
+} = require('mongoose');
 const { body, validationResult } = require('express-validator');
 const { ensureAuthenticated } = require('../middleware/auth');
 const { listAuctions, createAuction, getAuctionById, placeBid, closeExpiredAuctions } = require('../services/auctionService');
@@ -9,6 +12,21 @@ const { findUserById, recordReputation } = require('../models/userModel');
 const { listBidLogs } = require('../models/bidLogModel');
 
 const router = express.Router();
+
+function respondAuctionNotFound(req, res) {
+  const error = new Error('경매를 찾을 수 없습니다.');
+  if (req.xhr || (req.headers.accept && req.headers.accept.includes('application/json'))) {
+    return res.status(404).json({ message: error.message });
+  }
+  return res.status(404).render('error', { error });
+}
+
+function ensureValidAuctionId(req, res, next) {
+  if (!ObjectId.isValid(req.params.id)) {
+    return respondAuctionNotFound(req, res);
+  }
+  return next();
+}
 
 const uploadDir = path.join(__dirname, '..', 'public', 'uploads');
 if (!fs.existsSync(uploadDir)) {
@@ -151,7 +169,12 @@ router.post(
         throw Object.assign(new Error('유효한 종료 시간을 입력하세요.'), { status: 400 });
       }
       if (parsedEndTime <= new Date()) {
-        throw Object.assign(new Error('마감 시간은 현재 시각 이후여야 합니다.'), { status: 400 });
+        const message = '마감 시간은 현재 시각 이후여야 합니다.';
+        if (req.xhr || (req.headers.accept && req.headers.accept.includes('application/json'))) {
+          return res.status(400).json({ message });
+        }
+        req.flash('warning', message);
+        return res.redirect('/auctions/new');
       }
       const numericPrice = Number(startPrice);
       if (!Number.isFinite(numericPrice) || numericPrice <= 0) {
@@ -192,7 +215,7 @@ router.post(
  *       200:
  *         description: Auction details
  */
-router.get('/:id', ensureAuthenticated, async (req, res, next) => {
+router.get('/:id', ensureAuthenticated, ensureValidAuctionId, async (req, res, next) => {
   try {
     await closeExpiredAuctions();
     const auction = await getAuctionById(req.params.id);
@@ -234,6 +257,7 @@ router.get('/:id', ensureAuthenticated, async (req, res, next) => {
 router.post(
   '/:id/bids',
   ensureAuthenticated,
+  ensureValidAuctionId,
   [body('amount').isFloat({ gt: 0 }).withMessage('입찰가는 0보다 커야 합니다.')],
   async (req, res, next) => {
     const errors = validationResult(req);
@@ -305,6 +329,7 @@ router.post(
 router.post(
   '/:id/rate',
   ensureAuthenticated,
+  ensureValidAuctionId,
   [body('score').isInt({ min: 1, max: 5 }).withMessage('평점은 1에서 5 사이여야 합니다.')],
   async (req, res, next) => {
     const errors = validationResult(req);
@@ -320,10 +345,7 @@ router.post(
     try {
       const auction = await getAuctionById(req.params.id);
       if (!auction) {
-        return res.status(404).format({
-          html: () => res.render('error', { error: new Error('경매를 찾을 수 없습니다.') }),
-          json: () => res.json({ message: 'Auction not found' })
-        });
+        return respondAuctionNotFound(req, res);
       }
       if (auction.sellerId === req.session.user.id) {
         req.flash('error', '자신의 경매에는 평점을 남길 수 없습니다.');
@@ -369,16 +391,21 @@ router.post(
  *       200:
  *         description: File download
  */
-router.get('/:id/download', ensureAuthenticated, async (req, res, next) => {
-  try {
-    const auction = await getAuctionById(req.params.id);
-    if (!auction) {
-      return res.status(404).render('error', { error: new Error('경매를 찾을 수 없습니다.') });
+router.get('/:id/download', ensureAuthenticated, ensureValidAuctionId, async (req, res, next) => {
+    try {
+        await closeExpiredAuctions();
+        const auction = await getAuctionById(req.params.id);
+        if (!auction) {
+            return respondAuctionNotFound(req, res);
+        }
+        if (auction.status !== 'CLOSED') {
+            req.flash('error', '경매 종료 후에만 자료를 내려받을 수 있습니다.');
+            return res.redirect(`/auctions/${req.params.id}`);
+        }
+        res.download(path.resolve(auction.filePath), auction.fileOriginalName);
+    } catch (error) {
+        next(error);
     }
-    res.download(path.resolve(auction.filePath), auction.fileOriginalName);
-  } catch (error) {
-    next(error);
-  }
 });
 
 module.exports = router;

@@ -1,23 +1,15 @@
-<%- include('../partials/header', { title: '경매 목록' }) %>
-<% const openSource = typeof openAuctions !== 'undefined' ? openAuctions : []; %>
-<% const closedSource = typeof closedAuctions !== 'undefined' ? closedAuctions : []; %>
-<% const openList = Array.isArray(openSource) ? openSource : []; %>
-<% const closedList = Array.isArray(closedSource) ? closedSource : []; %>
-<% const openCount = typeof openTotal === 'number' ? openTotal : openList.length; %>
-<% const openPageCount = typeof openPages === 'number' && openPages > 0 ? openPages : 1; %>
-<% const pageNumber = typeof currentPage === 'number' && currentPage > 0 ? currentPage : 1; %>
+<%- include('../partials/header', { title: '내 경매' }) %>
 <section class="card">
   <header class="card-header">
-    <h2>진행 중인 입찰 (<%= openCount %>)</h2>
+    <h2>내가 진행 중인 경매</h2>
   </header>
   <div class="grid">
-    <% if (!openList.length) { %>
-    <p class="muted">현재 진행 중인 경매가 없습니다.</p>
+    <% if (!openAuctions.length) { %>
+    <p class="muted">진행 중인 나의 경매가 없습니다.</p>
     <% } %>
-    <% openList.forEach(function (auction) { %>
+    <% openAuctions.forEach(function (auction) { %>
     <article class="card auction-card" data-auction-id="<%= auction.id %>">
       <h3><a href="/auctions/<%= auction.id %>"><%= auction.title %></a></h3>
-      <p class="muted">판매자: <%= auction.sellerNickname %></p>
       <p>현재가: <span class="price">₩<%= auction.currentPrice.toLocaleString('ko-KR') %></span></p>
       <p>입찰 수: <span class="bid-count"><%= auction.bids.length %></span></p>
       <p>마감: <time datetime="<%= auction.endTime.toISOString() %>"><%= auction.endTime.toLocaleString('ko-KR') %></time></p>
@@ -26,27 +18,19 @@
     </article>
     <% }); %>
   </div>
-  <% if (openPageCount > 1) { %>
-  <nav class="pagination">
-    <% for (let i = 1; i <= openPageCount; i++) { %>
-    <a href="/auctions?page=<%= i %>" class="<%= i === pageNumber ? 'active' : '' %>"><%= i %></a>
-    <% } %>
-  </nav>
-  <% } %>
 </section>
 
 <section class="card">
   <header class="card-header">
-    <h2>완료된 입찰</h2>
+    <h2>완료된 나의 경매</h2>
   </header>
   <div class="grid">
-    <% if (!closedList.length) { %>
-    <p class="muted">완료된 경매 내역이 없습니다.</p>
+    <% if (!closedAuctions.length) { %>
+    <p class="muted">완료된 나의 경매 내역이 없습니다.</p>
     <% } %>
-    <% closedList.forEach(function (auction) { %>
+    <% closedAuctions.forEach(function (auction) { %>
     <article class="card auction-card auction-card--closed" data-auction-id="<%= auction.id %>">
       <h3><a href="/auctions/<%= auction.id %>"><%= auction.title %></a></h3>
-      <p class="muted">판매자: <%= auction.sellerNickname %></p>
       <p>낙찰가: <span class="price">₩<%= (auction.winningBidAmount || auction.currentPrice).toLocaleString('ko-KR') %></span></p>
       <p>낙찰자: <%= auction.winnerNickname ? auction.winnerNickname : '낙찰자 없음' %></p>
       <p>종료: <time datetime="<%= (auction.closedAt || auction.endTime).toISOString() %>"><%= (auction.closedAt || auction.endTime).toLocaleString('ko-KR') %></time></p>

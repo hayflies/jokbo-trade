@@ -1,0 +1,32 @@
+<%- include('../partials/header', { title: '알림' }) %>
+<section class="card">
+  <header class="card-header">
+    <h2>완료된 입찰 알림</h2>
+  </header>
+  <% if (!notifications.length) { %>
+  <p class="muted">아직 확인할 알림이 없습니다.</p>
+  <% } else { %>
+  <ul class="notification-list">
+    <% notifications.forEach(function (item) { %>
+    <li class="notification-item <%= item.isSeller ? 'is-seller' : 'is-bidder' %>">
+      <div class="notification-title">
+        <strong><a href="/auctions/<%= item.auction.id %>"><%= item.auction.title %></a></strong>
+        <% if (item.isSeller) { %>
+        <span class="badge">판매자</span>
+        <% } else if (item.isWinner) { %>
+        <span class="badge badge-success">낙찰자</span>
+        <% } %>
+      </div>
+      <p class="notification-message"><%= item.message %></p>
+      <p class="notification-meta">
+        종료 시각:
+        <time datetime="<%= (item.auction.closedAt || item.auction.endTime).toISOString() %>">
+          <%= (item.auction.closedAt || item.auction.endTime).toLocaleString('ko-KR') %>
+        </time>
+      </p>
+    </li>
+    <% }); %>
+  </ul>
+  <% } %>
+</section>
+<%- include('../partials/footer') %>

@@ -1,14 +1,76 @@
 <%- include('../partials/header', { title: auction.title }) %>
-<section class="card" data-auction-detail data-auction-id="<%= auction.id %>">
+<%
+  const downloadAllowed = typeof allowDownload === 'undefined' ? false : allowDownload;
+  const sellerView = typeof isSeller === 'undefined' ? false : isSeller;
+  const winnerView = typeof isWinner === 'undefined' ? false : isWinner;
+  const bidAllowed = typeof canBid === 'undefined' ? false : canBid;
+  const rateAllowed = typeof canRate === 'undefined' ? false : canRate;
+  const bidLogList = typeof bidLogs !== 'undefined' && Array.isArray(bidLogs) ? bidLogs : [];
+  const activeUser = typeof currentUser === 'undefined' ? null : currentUser;
+%>
+<section
+  class="card"
+  data-auction-detail
+  data-auction-id="<%= auction.id %>"
+  data-current-user-id="<%= activeUser ? activeUser.id : '' %>"
+  data-seller-id="<%= auction.sellerId %>"
+>
   <header class="card-header">
     <h2><%= auction.title %></h2>
     <p class="muted">판매자 닉네임: <%= auction.sellerNickname %></p>
+    <span class="status-badge <%= auction.status === 'CLOSED' ? 'status-closed' : 'status-open' %>">
+      <%= auction.status === 'CLOSED' ? '종료됨' : '진행 중' %>
+    </span>
   </header>
   <div class="auction-meta">
     <p>현재가: <strong class="price" data-current-price>₩<%= auction.currentPrice.toLocaleString('ko-KR') %></strong></p>
     <p>마감 예정: <time data-end-time datetime="<%= auction.endTime.toISOString() %>"><%= auction.endTime.toLocaleString('ko-KR') %></time></p>
     <p>총 입찰 수: <span data-bid-count><%= auction.bids.length %></span></p>
-    <a class="btn-secondary" href="/auctions/<%= auction.id %>/download">자료 다운로드</a>
+    <p
+      class="winner-line <%= auction.status === 'CLOSED' ? '' : 'hidden' %>"
+      data-winner-wrapper
+    >
+      낙찰자:
+      <strong data-winner-name><%= auction.winnerNickname ? auction.winnerNickname : '낙찰자 없음' %></strong>
+    </p>
+    <p
+      class="winner-line <%= auction.status === 'CLOSED' && auction.winningBidAmount ? '' : 'hidden' %>"
+      data-winning-wrapper
+    >
+      낙찰가:
+      <strong data-winning-amount>
+        <% if (auction.winningBidAmount) { %>
+        ₩<%= auction.winningBidAmount.toLocaleString('ko-KR') %>
+        <% } %>
+      </strong>
+    </p>
+    <a
+      class="btn-secondary<%= downloadAllowed ? '' : ' is-disabled' %>"
+      data-download-button
+      data-download-available="<%= downloadAllowed %>"
+      href="<%= downloadAllowed ? `/auctions/${auction.id}/download` : '#' %>"
+      <%= downloadAllowed ? '' : 'aria-disabled="true"' %>
+      >자료 다운로드</a
+    >
+    <p class="muted download-hint <%= downloadAllowed ? 'hidden' : '' %>" data-download-hint>경매 종료 후 자료를 내려받을 수 있습니다.</p>
+    <p
+      class="alert alert-success inline-alert <%= auction.status === 'CLOSED' && winnerView ? '' : 'hidden' %>"
+      data-winner-message
+    >
+      축하합니다! 이 경매의 낙찰자입니다.
+    </p>
+    <p
+      class="muted emphasis-message <%= auction.status === 'CLOSED' && sellerView && auction.winnerNickname ? '' : 'hidden' %>"
+      data-seller-winner-message
+    >
+      낙찰자에게 자료 전달을 준비해주세요.
+    </p>
+    <p
+      class="muted emphasis-message <%= auction.status === 'CLOSED' && sellerView && !auction.winnerNickname ? '' : 'hidden' %>"
+      data-seller-no-bid-message
+    >
+      낙찰자가 없어 경매가 종료되었습니다.
+    </p>
   </div>
   <section class="auction-description">
     <h3>설명</h3>
@@ -29,16 +91,29 @@
 
   <section class="bid-form">
     <h3>입찰하기</h3>
+    <% if (bidAllowed) { %>
     <form action="/auctions/<%= auction.id %>/bids" method="post" class="form-inline" data-bid-form>
-        <label>
-            <input type="number" name="amount" min="1" step="100" placeholder="입찰 금액" required />
-        </label>
-        <button type="submit" class="btn-primary">입찰</button>
+      <label>
+        <input type="number" name="amount" min="1" step="100" placeholder="입찰 금액" required />
+      </label>
+      <button type="submit" class="btn-primary">입찰</button>
     </form>
+    <% } else { %>
+    <p class="muted">
+      <% if (sellerView) { %>
+      자신의 경매에는 입찰할 수 없습니다.
+      <% } else if (auction.status === 'CLOSED') { %>
+      이미 종료된 경매입니다.
+      <% } else { %>
+      참여할 수 없는 경매입니다.
+      <% } %>
+    </p>
+    <% } %>
   </section>
 
   <section class="reputation-form">
     <h3>판매자 평가</h3>
+    <% if (rateAllowed) { %>
     <form action="/auctions/<%= auction.id %>/rate" method="post" class="form-grid">
       <label>평점 (1-5)
         <input type="number" name="score" min="1" max="5" required />
@@ -48,8 +123,12 @@
       </label>
       <button type="submit" class="btn-secondary">평가 등록</button>
     </form>
+    <% } else { %>
+    <p class="muted">입찰에 참여한 사용자만 경매 종료 후 평가를 남길 수 있습니다.</p>
+    <% } %>
   </section>
 
+  <% if (activeUser && activeUser.isAdmin) { %>
   <section class="audit-log">
     <h3>MariaDB 거래 로그</h3>
     <table>
@@ -61,7 +140,7 @@
         </tr>
       </thead>
       <tbody>
-        <% bidLogs.forEach(function (log) { %>
+        <% bidLogList.forEach(function (log) { %>
         <tr>
           <td><%= log.nickname %></td>
           <td>₩<%= Number(log.amount).toLocaleString('ko-KR') %></td>
@@ -71,5 +150,6 @@
       </tbody>
     </table>
   </section>
+  <% } %>
 </section>
 <%- include('../partials/footer') %>

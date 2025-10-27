@@ -48,6 +48,7 @@ body {
   align-items: center;
   margin: 0;
   padding: 0;
+  flex-wrap: wrap;
 }
 
 .site-header nav a {
@@ -85,8 +86,21 @@ main.container {
   gap: 1.5rem;
 }
 
+.grid > .muted {
+  grid-column: 1 / -1;
+}
+
 .auction-card h3 {
   margin-top: 0;
+}
+
+.card.auction-card {
+  margin: 0;
+}
+
+.winner-line {
+  margin: 0.25rem 0;
+  font-weight: 500;
 }
 
 .btn-primary,
@@ -119,6 +133,11 @@ button:hover {
   opacity: 0.9;
 }
 
+.btn-secondary.is-disabled {
+  pointer-events: none;
+  opacity: 0.6;
+}
+
 .form-grid {
   display: grid;
   gap: 1rem;
@@ -149,6 +168,11 @@ select {
   flex: 1;
 }
 
+.form-inline.is-disabled {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
 .table,
 table {
   width: 100%;
@@ -175,6 +199,94 @@ table td {
   border-bottom: 1px dashed var(--border);
 }
 
+.download-hint {
+  margin-top: 0.75rem;
+}
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #fff;
+}
+
+.status-open {
+  background: var(--primary);
+}
+
+.status-closed {
+  background: var(--muted);
+}
+
+.auction-card--closed {
+  opacity: 0.9;
+}
+
+.notification-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 1rem;
+}
+
+.notification-item {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+  background: #fff;
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.06);
+}
+
+.notification-item.is-seller {
+  border-left: 4px solid var(--primary);
+}
+
+.notification-item.is-bidder {
+  border-left: 4px solid var(--success);
+}
+
+.notification-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.notification-title a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.notification-message {
+  margin: 0.25rem 0 0.5rem 0;
+}
+
+.notification-meta {
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  background: rgba(78, 110, 242, 0.15);
+  color: var(--primary);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.badge-success {
+  background: rgba(16, 185, 129, 0.15);
+  color: var(--success);
+}
+
 .alert {
   padding: 0.8rem 1rem;
   border-radius: 8px;
@@ -186,9 +298,28 @@ table td {
   color: var(--danger);
 }
 
+.alert-warning {
+  background: rgba(245, 158, 11, 0.2);
+  color: #b45309;
+}
+
 .alert-success {
   background: rgba(16, 185, 129, 0.15);
   color: var(--success);
+}
+
+.hidden {
+  display: none !important;
+}
+
+.inline-alert {
+  display: inline-block;
+  margin-top: 0.75rem;
+}
+
+.emphasis-message {
+  font-weight: 600;
+  margin-top: 0.75rem;
 }
 
 .pagination {
