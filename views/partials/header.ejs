@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title><%= typeof title !== 'undefined' ? title + ' | Jokbo Trade' : 'Jokbo Trade' %></title>
+    <link rel="stylesheet" href="/css/styles.css" />
+    <script src="/socket.io/socket.io.js"></script>
+    <script defer src="/js/main.js"></script>
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="container">
+        <h1 class="logo"><a href="/">Jokbo Trade</a></h1>
+        <nav>
+          <ul>
+            <% if (currentUser) { %>
+            <li><span class="nickname"><%= currentUser.nickname %> (<%= currentUser.reputationScore || 0 %>★)</span></li>
+            <li><a href="/profile">내 프로필</a></li>
+            <li><a href="/auctions/new">경매 등록</a></li>
+            <li>
+              <form action="/logout" method="post" class="inline">
+                <button type="submit">로그아웃</button>
+              </form>
+            </li>
+            <% if (currentUser.isAdmin) { %>
+            <li><a href="/admin/users">관리자</a></li>
+            <% } %>
+            <% } else { %>
+            <li><a href="/login">로그인</a></li>
+            <li><a href="/register">회원가입</a></li>
+            <% } %>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="container">
+      <% if (flash.error) { %>
+      <div class="alert alert-error">
+        <% flash.error.forEach(function (message) { %>
+        <p><%= message %></p>
+        <% }); %>
+      </div>
+      <% } %>
+      <% if (flash.success) { %>
+      <div class="alert alert-success">
+        <% flash.success.forEach(function (message) { %>
+        <p><%= message %></p>
+        <% }); %>
+      </div>
+      <% } %>
+    </main>
+  </body>
+</html>

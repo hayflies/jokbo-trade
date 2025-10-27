@@ -1,0 +1,22 @@
+<%- include('../partials/header', { title: '관리자 - 사용자 정보' }) %>
+<section class="card">
+  <h2>사용자 상세</h2>
+  <dl class="profile-details">
+    <dt>ID</dt>
+    <dd><%= user.id %></dd>
+    <dt>이메일</dt>
+    <dd><%= user.email %></dd>
+    <dt>이름</dt>
+    <dd><%= user.real_name %></dd>
+    <dt>학번</dt>
+    <dd><%= user.student_id %></dd>
+    <dt>익명 닉네임</dt>
+    <dd><%= user.nickname %></dd>
+    <dt>평판</dt>
+    <dd><%= Number(user.reputation_score).toFixed(2) %>★</dd>
+    <dt>평가 수</dt>
+    <dd><%= user.reputation_count %></dd>
+  </dl>
+  <a class="btn-secondary" href="/admin/users">목록으로</a>
+</section>
+<%- include('../partials/footer') %>

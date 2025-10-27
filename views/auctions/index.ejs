@@ -1,0 +1,23 @@
+<%- include('../partials/header', { title: '경매 목록' }) %>
+<section class="grid">
+  <% if (!auctions.length) { %>
+  <p class="muted">등록된 경매가 없습니다. 첫 번째 자료를 올려 보세요!</p>
+  <% } %>
+  <% auctions.forEach(function (auction) { %>
+  <article class="card auction-card" data-auction-id="<%= auction.id %>">
+    <h3><a href="/auctions/<%= auction.id %>"><%= auction.title %></a></h3>
+    <p class="muted">판매자: <%= auction.sellerNickname %></p>
+    <p>현재가: <span class="price">₩<%= auction.currentPrice.toLocaleString('ko-KR') %></span></p>
+    <p>입찰 수: <span class="bid-count"><%= auction.bids.length %></span></p>
+    <p>마감: <time datetime="<%= auction.endTime.toISOString() %>"><%= auction.endTime.toLocaleString('ko-KR') %></time></p>
+    <a class="btn-secondary" href="/auctions/<%= auction.id %>">상세보기</a>
+  </article>
+  <% }); %>
+</section>
+
+<nav class="pagination">
+  <% for (let i = 1; i <= pages; i++) { %>
+  <a href="/auctions?page=<%= i %>" class="<%= i === currentPage ? 'active' : '' %>"><%= i %></a>
+  <% } %>
+</nav>
+<%- include('../partials/footer') %>

@@ -1,0 +1,27 @@
+<%- include('../partials/header', { title: '관리자 - 사용자 목록' }) %>
+<section class="card">
+  <h2>사용자 목록</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>익명 닉네임</th>
+        <th>평판</th>
+        <th>등록일</th>
+        <th>자세히</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% users.forEach(function (user) { %>
+      <tr>
+        <td><%= user.id %></td>
+        <td><%= user.nickname %></td>
+        <td><%= Number(user.reputation_score).toFixed(2) %>★</td>
+        <td><%= new Date(user.created_at).toLocaleString('ko-KR') %></td>
+        <td><a href="/admin/users/<%= user.id %>">보기</a></td>
+      </tr>
+      <% }); %>
+    </tbody>
+  </table>
+</section>
+<%- include('../partials/footer') %>

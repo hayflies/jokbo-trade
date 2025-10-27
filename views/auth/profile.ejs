@@ -1,0 +1,17 @@
+<%- include('../partials/header', { title: '내 프로필' }) %>
+<section class="card">
+  <h2>내 프로필</h2>
+  <dl class="profile-details">
+    <dt>익명 닉네임</dt>
+    <dd><%= user.nickname %></dd>
+    <dt>평판</dt>
+    <dd><%= user.reputation_score %> ★ (<%= user.reputation_count %>건)</dd>
+    <dt>이메일</dt>
+    <dd><%= user.email %></dd>
+    <dt>이름</dt>
+    <dd><%= user.real_name %></dd>
+    <dt>학번</dt>
+    <dd><%= user.student_id %></dd>
+  </dl>
+</section>
+<%- include('../partials/footer') %>

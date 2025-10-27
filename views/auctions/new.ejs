@@ -1,0 +1,13 @@
+<%- include('../partials/header', { title: '경매 등록' }) %>
+<section class="card">
+  <h2>새 경매 등록</h2>
+  <form action="/auctions" method="post" enctype="multipart/form-data" class="form-grid">
+    <label>제목<input type="text" name="title" required /></label>
+    <label>설명<textarea name="description" rows="4" required></textarea></label>
+    <label>시작가<input type="number" name="startPrice" min="1" step="100" required /></label>
+    <label>마감 시간<input type="datetime-local" name="endTime" required /></label>
+    <label>자료 파일 (이미지/PDF)<input type="file" name="file" accept="image/*,.pdf" required /></label>
+    <button type="submit" class="btn-primary">경매 시작</button>
+  </form>
+</section>
+<%- include('../partials/footer') %>

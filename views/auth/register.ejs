@@ -1,0 +1,13 @@
+<%- include('../partials/header', { title: '회원가입' }) %>
+<section class="card">
+  <h2>회원가입</h2>
+  <form action="/register" method="post" class="form-grid">
+    <label>이메일<input type="email" name="email" required /></label>
+    <label>비밀번호<input type="password" name="password" minlength="8" required /></label>
+    <label>이름<input type="text" name="realName" required /></label>
+    <label>학번<input type="text" name="studentId" required /></label>
+    <button type="submit" class="btn-primary">가입하기</button>
+  </form>
+  <p class="muted">이미 계정이 있으신가요? <a href="/login">로그인</a></p>
+</section>
+<%- include('../partials/footer') %>
