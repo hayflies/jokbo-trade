@@ -51,12 +51,17 @@ function determineWinner(auction) {
 }
 
 async function finalizeAuction(auction) {
-  if (!auction || auction.status === 'CLOSED') {
+  if (!auction) {
+    return auction;
+  }
+  if (auction.status === 'CLOSED' && (auction.winnerId || !auction.bids.length)) {
     return auction;
   }
   determineWinner(auction);
   auction.status = 'CLOSED';
-  auction.closedAt = new Date();
+  if (!auction.closedAt) {
+    auction.closedAt = new Date();
+  }
   await auction.save();
   broadcastBidUpdate(auction);
   return auction;
@@ -67,13 +72,26 @@ async function getAuctionById(id) {
 }
 
 async function createAuction({ title, description, startPrice, endTime, sellerId, sellerNickname, file }) {
+  const normalizedStartPrice = Number(startPrice);
+  if (
+    !Number.isFinite(normalizedStartPrice) ||
+    !Number.isInteger(normalizedStartPrice) ||
+    normalizedStartPrice < 100 ||
+    normalizedStartPrice % 100 !== 0
+  ) {
+    throw new Error('시작가는 100원 단위로 100원 이상이어야 합니다.');
+  }
+  const numericSellerId = Number(sellerId);
+  if (!Number.isFinite(numericSellerId) || !Number.isInteger(numericSellerId)) {
+    throw new Error('유효한 판매자 정보를 확인할 수 없습니다.');
+  }
   const auction = new Auction({
     title,
     description,
-    sellerId,
+    sellerId: numericSellerId,
     sellerNickname,
-    startPrice,
-    currentPrice: startPrice,
+    startPrice: normalizedStartPrice,
+    currentPrice: normalizedStartPrice,
     endTime,
     filePath: file.path,
     fileOriginalName: file.originalname
@@ -92,7 +110,11 @@ async function placeBid({ auctionId, bidderId, bidderNickname, amount }) {
     throw Object.assign(new Error('Auction already closed'), { status: 400 });
   }
 
-  if (auction.sellerId === bidderId) {
+  const normalizedBidderId = Number(bidderId);
+  if (!Number.isFinite(normalizedBidderId) || !Number.isInteger(normalizedBidderId)) {
+    throw Object.assign(new Error('유효한 사용자 정보를 확인할 수 없습니다.'), { status: 400 });
+  }
+  if (Number(auction.sellerId) === normalizedBidderId) {
     throw Object.assign(new Error('자신의 경매에는 입찰할 수 없습니다.'), { status: 400 });
   }
 
@@ -102,12 +124,25 @@ async function placeBid({ auctionId, bidderId, bidderNickname, amount }) {
     throw Object.assign(new Error('Auction has ended'), { status: 400 });
   }
 
-  if (amount <= auction.currentPrice) {
-    throw Object.assign(new Error('Bid must be higher than current price'), { status: 400 });
+  const normalizedAmount = Number(amount);
+  if (!Number.isFinite(normalizedAmount) || !Number.isInteger(normalizedAmount)) {
+    throw Object.assign(new Error('유효한 입찰 금액을 입력해주세요.'), { status: 400 });
   }
 
-  auction.currentPrice = amount;
-  auction.bids.push({ bidderId, bidderNickname, amount, createdAt: now });
+  const currentPrice = Number(auction.currentPrice);
+  if (!Number.isFinite(currentPrice)) {
+    throw Object.assign(new Error('현재 경매 가격 정보를 불러올 수 없습니다.'), { status: 500 });
+  }
+  const minimumIncrement = currentPrice + 100;
+  if (normalizedAmount < minimumIncrement) {
+    throw Object.assign(new Error('입찰가는 현재가보다 최소 100원 이상 높아야 합니다.'), { status: 400 });
+  }
+  if (normalizedAmount % 100 !== 0) {
+    throw Object.assign(new Error('입찰가는 100원 단위여야 합니다.'), { status: 400 });
+  }
+
+  auction.currentPrice = normalizedAmount;
+  auction.bids.push({ bidderId: normalizedBidderId, bidderNickname, amount: normalizedAmount, createdAt: now });
 
   const oneMinute = 60 * 1000;
   if (auction.endTime.getTime() - now.getTime() <= oneMinute) {
@@ -115,7 +150,7 @@ async function placeBid({ auctionId, bidderId, bidderNickname, amount }) {
   }
 
   await auction.save();
-  await recordBidLog({ auctionId: auction.id, bidderId, amount });
+  await recordBidLog({ auctionId: auction.id, bidderId: normalizedBidderId, amount: normalizedAmount });
   broadcastBidUpdate(auction);
 
   return auction;
@@ -123,8 +158,14 @@ async function placeBid({ auctionId, bidderId, bidderNickname, amount }) {
 
 async function closeExpiredAuctions() {
   const now = new Date();
-  const expired = await Auction.find({ endTime: { $lt: now }, status: 'OPEN' });
-  await Promise.all(expired.map((auction) => finalizeAuction(auction)));
+  const [expired, closedWithoutWinner] = await Promise.all([
+    Auction.find({ endTime: { $lt: now }, status: 'OPEN' }),
+    Auction.find({ status: 'CLOSED', winnerId: null, 'bids.0': { $exists: true } })
+  ]);
+  await Promise.all([
+    ...expired.map((auction) => finalizeAuction(auction)),
+    ...closedWithoutWinner.map((auction) => finalizeAuction(auction))
+  ]);
 }
 
 async function listUserAuctions(userId) {

@@ -94,7 +94,14 @@
     <% if (bidAllowed) { %>
     <form action="/auctions/<%= auction.id %>/bids" method="post" class="form-inline" data-bid-form>
       <label>
-        <input type="number" name="amount" min="1" step="100" placeholder="입찰 금액" required />
+        <input
+          type="number"
+          name="amount"
+          min="<%= auction.currentPrice + 100 %>"
+          step="100"
+          placeholder="입찰 금액"
+          required
+        />
       </label>
       <button type="submit" class="btn-primary">입찰</button>
     </form>
