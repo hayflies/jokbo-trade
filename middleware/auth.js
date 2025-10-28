@@ -11,10 +11,10 @@ function ensureAuthenticated(req, res, next) {
 
 function ensureAdmin(req, res, next) {
   const isApiRequest = req.originalUrl.startsWith('/api') || req.originalUrl.startsWith('/admin/api');
-  const expectsJsonResponse =
-    isApiRequest ||
-    req.xhr ||
-    (req.headers.accept && req.headers.accept.includes('application/json'));
+  const acceptHeader = (req.headers.accept || '').toLowerCase();
+  const wantsHtmlResponse = acceptHeader.includes('text/html');
+  const wantsJsonResponse = acceptHeader.includes('application/json') || acceptHeader.includes('application/vnd.api+json');
+  const expectsJsonResponse = isApiRequest || req.xhr || (!wantsHtmlResponse && wantsJsonResponse);
 
   if (req.session && req.session.user && req.session.user.isAdmin) {
     return next();

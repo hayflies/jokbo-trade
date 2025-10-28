@@ -98,6 +98,12 @@ app.set('views', path.join(__dirname, 'views'));
 
 const helmetOptions = buildHelmetConfig();
 app.use(helmet(helmetOptions));
+app.use((req, res, next) => {
+  if (!res.getHeader('Origin-Agent-Cluster')) {
+    res.setHeader('Origin-Agent-Cluster', '?1');
+  }
+  next();
+});
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(methodOverride('_method'));
