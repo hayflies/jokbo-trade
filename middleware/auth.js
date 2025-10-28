@@ -13,7 +13,11 @@ function ensureAdmin(req, res, next) {
   if (req.session && req.session.user && req.session.user.isAdmin) {
     return next();
   }
-  if (req.originalUrl.startsWith('/api')) {
+  if (
+    req.originalUrl.startsWith('/api') ||
+    req.originalUrl.startsWith('/admin/api') ||
+    req.originalUrl.startsWith('/api-docs')
+  ) {
     return res.status(403).json({ message: 'Admin access required' });
   }
   req.flash('error', '관리자 권한이 필요합니다.');

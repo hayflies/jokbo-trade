@@ -14,11 +14,13 @@ const { initMongo } = require('./db/mongo');
 const { configureSocket } = require('./services/socketService');
 const swaggerUi = require('swagger-ui-express');
 const swaggerSpec = require('./config/swagger');
+const { ensureAdmin } = require('./middleware/auth');
 
 const authRoutes = require('./routes/authRoutes');
 const auctionRoutes = require('./routes/auctionRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const apiRoutes = require('./routes/apiRoutes');
+const adminApiRoutes = require('./routes/adminApiRoutes');
 
 const app = express();
 const server = http.createServer(app);
@@ -57,8 +59,9 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use('/', authRoutes);
 app.use('/auctions', auctionRoutes);
 app.use('/admin', adminRoutes);
+app.use('/admin/api', adminApiRoutes);
 app.use('/api', apiRoutes);
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+app.use('/api-docs', ensureAdmin, swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 app.get('/', (req, res) => {
   res.redirect('/auctions');
