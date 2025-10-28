@@ -8,6 +8,8 @@ const MongoStore = require('connect-mongo');
 const flash = require('connect-flash');
 const methodOverride = require('method-override');
 const http = require('http');
+const https = require('https');
+const fs = require('fs');
 
 const { initMaria } = require('./db/mariadb');
 const { initMongo } = require('./db/mongo');
@@ -24,8 +26,71 @@ const adminApiRoutes = require('./routes/adminApiRoutes');
 
 const { buildHelmetConfig } = require('./config/security');
 
+const requestedProtocol = (process.env.APP_PROTOCOL || 'http').toLowerCase();
+const HOST = process.env.HOST || '0.0.0.0';
+const PORT = parseInt(process.env.PORT, 10) || 3203;
+
+function resolvePath(maybePath) {
+  if (!maybePath) {
+    return undefined;
+  }
+  const trimmed = maybePath.trim();
+  if (!trimmed) {
+    return undefined;
+  }
+  return path.isAbsolute(trimmed) ? trimmed : path.join(process.cwd(), trimmed);
+}
+
+function buildHttpsOptions() {
+  const keyPath = resolvePath(process.env.SSL_KEY_PATH);
+  const certPath = resolvePath(process.env.SSL_CERT_PATH);
+
+  if (!keyPath || !certPath) {
+    return null;
+  }
+
+  try {
+    const httpsOptions = {
+      key: fs.readFileSync(keyPath),
+      cert: fs.readFileSync(certPath)
+    };
+
+    const caPath = resolvePath(process.env.SSL_CA_PATH);
+    if (caPath) {
+      httpsOptions.ca = fs.readFileSync(caPath);
+    }
+
+    if (process.env.SSL_PASSPHRASE) {
+      httpsOptions.passphrase = process.env.SSL_PASSPHRASE;
+    }
+
+    return httpsOptions;
+  } catch (error) {
+    console.error('Failed to load SSL certificates', error);
+    return null;
+  }
+}
+
 const app = express();
-const server = http.createServer(app);
+
+let activeProtocol = requestedProtocol === 'https' ? 'https' : 'http';
+let server;
+
+if (requestedProtocol === 'https') {
+  const httpsOptions = buildHttpsOptions();
+  if (httpsOptions) {
+    server = https.createServer(httpsOptions, app);
+  } else {
+    console.warn(
+      'APP_PROTOCOL is set to https but SSL configuration is missing. Falling back to http server.'
+    );
+    activeProtocol = 'http';
+    server = http.createServer(app);
+  }
+} else {
+  server = http.createServer(app);
+}
+
 configureSocket(server);
 
 app.set('view engine', 'ejs');
@@ -78,12 +143,11 @@ app.use((err, req, res, next) => {
   res.status(err.status || 500).render('error', { error: err });
 });
 
-const HOST = process.env.HOST || '172.0.0.0';
-const PORT = parseInt(process.env.PORT, 10) || 3203;
-const APP_PROTOCOL = process.env.APP_PROTOCOL || 'http';
 const appHostPreference = process.env.APP_HOST || process.env.PUBLIC_HOST || process.env.HOST;
-const displayHost = appHostPreference && appHostPreference !== '0.0.0.0' ? appHostPreference : HOST;
-const appBaseUrl = process.env.APP_BASE_URL || `${APP_PROTOCOL}://${displayHost}${PORT ? `:${PORT}` : ''}`;
+const displayHost = appHostPreference && appHostPreference !== '0.0.0.0' ? appHostPreference : 'localhost';
+const isStandardPort = (port, protocol) => (protocol === 'https' ? port === 443 : port === 80);
+const portSuffix = PORT && !isStandardPort(PORT, activeProtocol) ? `:${PORT}` : '';
+const appBaseUrl = process.env.APP_BASE_URL || `${activeProtocol}://${displayHost}${portSuffix}`;
 
 async function start() {
   await initMaria();
