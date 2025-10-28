@@ -143,7 +143,10 @@ router.get('/login', (req, res) => {
  */
 router.post(
   '/login',
-  [body('email').isEmail(), body('password').notEmpty()],
+  [
+    body('email').isEmail().withMessage('유효한 이메일을 입력하세요.'),
+    body('password').notEmpty().withMessage('비밀번호를 입력하세요.')
+  ],
   async (req, res, next) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
