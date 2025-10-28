@@ -22,6 +22,8 @@ const adminRoutes = require('./routes/adminRoutes');
 const apiRoutes = require('./routes/apiRoutes');
 const adminApiRoutes = require('./routes/adminApiRoutes');
 
+const { buildHelmetConfig } = require('./config/security');
+
 const app = express();
 const server = http.createServer(app);
 configureSocket(server);
@@ -29,7 +31,8 @@ configureSocket(server);
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
-app.use(helmet());
+const helmetOptions = buildHelmetConfig();
+app.use(helmet(helmetOptions));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(methodOverride('_method'));
