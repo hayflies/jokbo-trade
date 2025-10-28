@@ -1,5 +1,11 @@
 const swaggerJsdoc = require('swagger-jsdoc');
 
+const protocol = process.env.APP_PROTOCOL || 'http';
+const hostFromEnv = process.env.APP_HOST || process.env.PUBLIC_HOST || process.env.HOST;
+const host = hostFromEnv && hostFromEnv !== '0.0.0.0' ? hostFromEnv : 'localhost';
+const port = parseInt(process.env.PORT, 10) || 3203;
+const baseUrl = process.env.APP_BASE_URL || `${protocol}://${host}${port ? `:${port}` : ''}`;
+
 const options = {
   definition: {
     openapi: '3.0.3',
@@ -10,8 +16,8 @@ const options = {
     },
     servers: [
       {
-        url: 'http://localhost:' + (process.env.PORT || 3000),
-        description: 'Development server'
+        url: baseUrl,
+        description: 'Primary server'
       }
     ],
     components: {

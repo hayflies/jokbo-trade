@@ -75,13 +75,18 @@ app.use((err, req, res, next) => {
   res.status(err.status || 500).render('error', { error: err });
 });
 
-const PORT = process.env.PORT || 3000;
+const HOST = process.env.HOST || '172.0.0.0';
+const PORT = parseInt(process.env.PORT, 10) || 3203;
+const APP_PROTOCOL = process.env.APP_PROTOCOL || 'http';
+const appHostPreference = process.env.APP_HOST || process.env.PUBLIC_HOST || process.env.HOST;
+const displayHost = appHostPreference && appHostPreference !== '0.0.0.0' ? appHostPreference : HOST;
+const appBaseUrl = process.env.APP_BASE_URL || `${APP_PROTOCOL}://${displayHost}${PORT ? `:${PORT}` : ''}`;
 
 async function start() {
   await initMaria();
   await initMongo();
-  server.listen(PORT, () => {
-    console.log(`Server listening on port ${PORT}`);
+  server.listen(PORT, HOST, () => {
+    console.log(`Server listening on ${appBaseUrl} (bound to ${HOST})`);
   });
 }
 
