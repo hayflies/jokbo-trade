@@ -1,8 +1,14 @@
 const helmet = require('helmet');
 
-function buildHelmetConfig() {
+function buildHelmetConfig({ isSecure = false } = {}) {
+  const defaultDirectives = helmet.contentSecurityPolicy.getDefaultDirectives();
+
+  if (!isSecure) {
+    delete defaultDirectives['upgrade-insecure-requests'];
+  }
+
   const directives = {
-    ...helmet.contentSecurityPolicy.getDefaultDirectives(),
+    ...defaultDirectives,
     "style-src": ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
     "font-src": ["'self'", 'https://fonts.gstatic.com', 'data:'],
     "script-src": ["'self'", "'unsafe-inline'"],
@@ -13,7 +19,11 @@ function buildHelmetConfig() {
     "object-src": ["'none'"]
   };
 
-  return {
+  if (!isSecure) {
+    delete directives['upgrade-insecure-requests'];
+  }
+
+  const config = {
     contentSecurityPolicy: {
       useDefaults: false,
       directives
@@ -23,6 +33,12 @@ function buildHelmetConfig() {
     hsts: false,
     referrerPolicy: { policy: 'no-referrer' }
   };
+
+  if (!isSecure) {
+    config.crossOriginOpenerPolicy = false;
+  }
+
+  return config;
 }
 
 module.exports = { buildHelmetConfig };
