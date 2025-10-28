@@ -19,6 +19,26 @@ const store = {
 
 const seeded = { value: false };
 
+const SEED_IDS = {
+  adminUser: 'user_admin_controller',
+  reviewerUser: 'user_quality_reviewer',
+  adminActivity: 'activity_admin_seed_login',
+  reviewerWarning: 'warning_reviewer_failed_login',
+  linearAuction: 'auction_linear_notes',
+  organicAuction: 'auction_organic_chemistry',
+  linearBid: 'bid_linear_quality',
+  fraudReport: 'report_fraud_suspicion',
+  settlementTransaction: 'txn_linear_sale',
+  settlementRefund: 'refund_linear_partial',
+  pendingPayout: 'payout_linear_seller',
+  maintenanceAnnouncement: 'announcement_system_maintenance',
+  welcomeNotification: 'notification_admin_welcome',
+  bootstrapAudit: 'audit_seed_bootstrap',
+  emailIntegration: 'integration_email_delivery',
+  moderatorInvitation: 'invitation_moderator_seed',
+  adminSession: 'session_admin_seed'
+};
+
 function generateId(prefix) {
   if (typeof crypto.randomUUID === 'function') {
     return `${prefix}_${crypto.randomUUID()}`;
@@ -31,106 +51,146 @@ function seedStore() {
     return;
   }
   seeded.value = true;
+  const now = new Date().toISOString();
+
   const adminUser = createUser({
+    id: SEED_IDS.adminUser,
     name: 'Admin Controller',
     email: 'admin@example.com',
-    status: 'ACTIVE'
+    status: 'ACTIVE',
+    createdAt: now
   });
-  adminUser.activity.push({
-    id: generateId('activity'),
-    type: 'LOGIN',
-    createdAt: new Date().toISOString(),
-    description: 'Administrator logged in to seed system'
-  });
+  recordUserActivity(
+    adminUser.id,
+    {
+      type: 'LOGIN',
+      description: 'Administrator logged in to seed system'
+    },
+    { id: SEED_IDS.adminActivity, createdAt: now }
+  );
 
   const reviewer = createUser({
+    id: SEED_IDS.reviewerUser,
     name: 'Quality Reviewer',
     email: 'quality@example.com',
-    status: 'SUSPENDED'
+    status: 'SUSPENDED',
+    createdAt: now
   });
-  addUserWarning(reviewer.id, 'Multiple failed login attempts recorded');
+  addUserWarning(reviewer.id, 'Multiple failed login attempts recorded', {
+    id: SEED_IDS.reviewerWarning,
+    createdAt: now
+  });
 
   const auctionOne = createAuction({
+    id: SEED_IDS.linearAuction,
     title: 'Linear Algebra Notes',
     status: 'OPEN',
     sellerId: adminUser.id,
-    startingPrice: 10
+    startingPrice: 10,
+    createdAt: now
   });
   addAuctionBid(auctionOne.id, {
+    id: SEED_IDS.linearBid,
     bidderId: reviewer.id,
     bidderName: 'Quality Reviewer',
-    amount: 12
+    amount: 12,
+    createdAt: now
   });
 
   const auctionTwo = createAuction({
+    id: SEED_IDS.organicAuction,
     title: 'Organic Chemistry Lab Reports',
     status: 'CLOSED',
     sellerId: reviewer.id,
-    startingPrice: 25
+    startingPrice: 25,
+    createdAt: now
   });
 
   const report = createReport({
+    id: SEED_IDS.fraudReport,
     type: 'FRAUD',
     status: 'OPEN',
     auctionId: auctionTwo.id,
     reporterId: adminUser.id,
-    description: 'Suspicious bidding pattern detected'
+    description: 'Suspicious bidding pattern detected',
+    createdAt: now
   });
   assignReport(report.id, adminUser.id);
 
   const transaction = createTransaction({
+    id: SEED_IDS.settlementTransaction,
     auctionId: auctionOne.id,
     amount: 12,
     status: 'SETTLED',
-    buyerId: reviewer.id
+    buyerId: reviewer.id,
+    createdAt: now
+  });
+
+  recordRefund(transaction.id, 2, 'Partial refund for verification', {
+    id: SEED_IDS.settlementRefund,
+    createdAt: now
   });
 
   createPayout({
+    id: SEED_IDS.pendingPayout,
     transactionId: transaction.id,
     amount: 10,
     status: 'PENDING',
-    recipientId: adminUser.id
+    recipientId: adminUser.id,
+    createdAt: now
   });
 
   createAnnouncement({
+    id: SEED_IDS.maintenanceAnnouncement,
     title: 'System Maintenance',
     body: 'Scheduled maintenance on Friday 10pm KST',
-    status: 'DRAFT'
+    status: 'DRAFT',
+    createdAt: now
   });
 
   updateSetting('platformName', {
     key: 'platformName',
     value: 'Jokbo Trade',
-    updatedAt: new Date().toISOString()
+    updatedAt: now,
+    createdAt: now
   });
 
   createNotification({
+    id: SEED_IDS.welcomeNotification,
     type: 'SYSTEM',
     message: 'Welcome administrators!',
-    audience: 'admins'
+    audience: 'admins',
+    createdAt: now
   });
 
   createAuditLog({
+    id: SEED_IDS.bootstrapAudit,
     actorId: adminUser.id,
     action: 'SEED',
     resource: 'system',
-    metadata: { message: 'Initial seed completed' }
+    metadata: { message: 'Initial seed completed' },
+    createdAt: now
   });
 
   createIntegration({
-    name: 'email-delivery',
+    name: SEED_IDS.emailIntegration,
     config: { provider: 'ses', region: 'ap-northeast-2' },
-    status: 'ACTIVE'
+    status: 'ACTIVE',
+    createdAt: now
   });
 
   createInvitation({
+    id: SEED_IDS.moderatorInvitation,
     email: 'newmoderator@example.com',
-    role: 'moderator'
+    role: 'moderator',
+    createdAt: now
   });
 
   createSystemSession({
+    id: SEED_IDS.adminSession,
     userId: adminUser.id,
-    userAgent: 'seed-script'
+    userAgent: 'seed-script',
+    createdAt: now
   });
 }
 
@@ -138,19 +198,19 @@ function toArray(resource) {
   return Array.from(store[resource].values());
 }
 
-function createUser({ name, email, status }) {
-  const id = generateId('user');
+function createUser({ id, name, email, status, createdAt }) {
+  const identifier = id || generateId('user');
   const user = {
-    id,
+    id: identifier,
     name,
     email,
     status: status || 'ACTIVE',
     warnings: [],
     activity: [],
-    createdAt: new Date().toISOString(),
+    createdAt: createdAt || new Date().toISOString(),
     lastLoginAt: new Date().toISOString()
   };
-  store.users.set(id, user);
+  store.users.set(identifier, user);
   return user;
 }
 
@@ -178,15 +238,15 @@ function deleteUser(id) {
   return existed;
 }
 
-function addUserWarning(id, message) {
+function addUserWarning(id, message, metadata = {}) {
   const user = getUser(id);
   if (!user) {
     return null;
   }
   const warning = {
-    id: generateId('warning'),
+    id: metadata.id || generateId('warning'),
     message,
-    createdAt: new Date().toISOString()
+    createdAt: metadata.createdAt || new Date().toISOString()
   };
   user.warnings.push(warning);
   return warning;
@@ -205,14 +265,14 @@ function removeUserWarning(userId, warningId) {
   return removed;
 }
 
-function recordUserActivity(id, activity) {
+function recordUserActivity(id, activity, metadata = {}) {
   const user = getUser(id);
   if (!user) {
     return null;
   }
   const entry = {
-    id: generateId('activity'),
-    createdAt: new Date().toISOString(),
+    id: metadata.id || generateId('activity'),
+    createdAt: metadata.createdAt || new Date().toISOString(),
     ...activity
   };
   user.activity.unshift(entry);
@@ -226,18 +286,18 @@ function setUserStatus(id, status) {
   return updateUser(id, { status });
 }
 
-function createAuction({ title, status, sellerId, startingPrice }) {
-  const id = generateId('auction');
+function createAuction({ id, title, status, sellerId, startingPrice, createdAt }) {
+  const identifier = id || generateId('auction');
   const auction = {
-    id,
+    id: identifier,
     title,
     status: status || 'OPEN',
     sellerId,
     startingPrice: typeof startingPrice === 'number' ? startingPrice : 0,
     bids: [],
-    createdAt: new Date().toISOString()
+    createdAt: createdAt || new Date().toISOString()
   };
-  store.auctions.set(id, auction);
+  store.auctions.set(identifier, auction);
   return auction;
 }
 
@@ -264,17 +324,17 @@ function deleteAuction(id) {
   return store.auctions.delete(id);
 }
 
-function addAuctionBid(id, { bidderId, bidderName, amount }) {
+function addAuctionBid(id, { id: bidId, bidderId, bidderName, amount, createdAt }) {
   const auction = getAuction(id);
   if (!auction) {
     return null;
   }
   const bid = {
-    id: generateId('bid'),
+    id: bidId || generateId('bid'),
     bidderId,
     bidderName,
     amount,
-    createdAt: new Date().toISOString()
+    createdAt: createdAt || new Date().toISOString()
   };
   auction.bids.push(bid);
   return bid;
@@ -297,19 +357,19 @@ function setAuctionStatus(id, status) {
   return updateAuction(id, { status });
 }
 
-function createReport({ type, status, auctionId, reporterId, description }) {
-  const id = generateId('report');
+function createReport({ id, type, status, auctionId, reporterId, description, createdAt }) {
+  const identifier = id || generateId('report');
   const report = {
-    id,
+    id: identifier,
     type,
     status: status || 'OPEN',
     auctionId,
     reporterId,
     description,
     assignedTo: null,
-    createdAt: new Date().toISOString()
+    createdAt: createdAt || new Date().toISOString()
   };
-  store.reports.set(id, report);
+  store.reports.set(identifier, report);
   return report;
 }
 
@@ -344,18 +404,18 @@ function assignReport(id, assigneeId) {
   return updateReport(id, { assignedTo: assigneeId });
 }
 
-function createTransaction({ auctionId, amount, status, buyerId }) {
-  const id = generateId('transaction');
+function createTransaction({ id, auctionId, amount, status, buyerId, createdAt }) {
+  const identifier = id || generateId('transaction');
   const transaction = {
-    id,
+    id: identifier,
     auctionId,
     amount,
     status: status || 'PENDING',
     buyerId,
     refunds: [],
-    createdAt: new Date().toISOString()
+    createdAt: createdAt || new Date().toISOString()
   };
-  store.transactions.set(id, transaction);
+  store.transactions.set(identifier, transaction);
   return transaction;
 }
 
@@ -386,33 +446,33 @@ function setTransactionStatus(id, status) {
   return updateTransaction(id, { status });
 }
 
-function recordRefund(transactionId, amount, reason) {
+function recordRefund(transactionId, amount, reason, metadata = {}) {
   const transaction = getTransaction(transactionId);
   if (!transaction) {
     return null;
   }
   const refund = {
-    id: generateId('refund'),
+    id: metadata.id || generateId('refund'),
     amount,
     reason,
-    createdAt: new Date().toISOString()
+    createdAt: metadata.createdAt || new Date().toISOString()
   };
   transaction.refunds.push(refund);
   transaction.updatedAt = new Date().toISOString();
   return refund;
 }
 
-function createPayout({ transactionId, amount, status, recipientId }) {
-  const id = generateId('payout');
+function createPayout({ id, transactionId, amount, status, recipientId, createdAt }) {
+  const identifier = id || generateId('payout');
   const payout = {
-    id,
+    id: identifier,
     transactionId,
     amount,
     status: status || 'PENDING',
     recipientId,
-    createdAt: new Date().toISOString()
+    createdAt: createdAt || new Date().toISOString()
   };
-  store.payouts.set(id, payout);
+  store.payouts.set(identifier, payout);
   return payout;
 }
 
@@ -443,17 +503,17 @@ function setPayoutStatus(id, status) {
   return updatePayout(id, { status });
 }
 
-function createAnnouncement({ title, body, status }) {
-  const id = generateId('announcement');
+function createAnnouncement({ id, title, body, status, createdAt }) {
+  const identifier = id || generateId('announcement');
   const announcement = {
-    id,
+    id: identifier,
     title,
     body,
     status: status || 'DRAFT',
     publishedAt: null,
-    createdAt: new Date().toISOString()
+    createdAt: createdAt || new Date().toISOString()
   };
-  store.announcements.set(id, announcement);
+  store.announcements.set(identifier, announcement);
   return announcement;
 }
 
@@ -489,8 +549,12 @@ function listSettings() {
   return toArray('settings');
 }
 
-function createSetting(key, value) {
-  const payload = { key, value, createdAt: new Date().toISOString() };
+function createSetting(key, value, metadata = {}) {
+  const payload = {
+    key,
+    value,
+    createdAt: metadata.createdAt || new Date().toISOString()
+  };
   store.settings.set(key, payload);
   return payload;
 }
@@ -506,17 +570,17 @@ function deleteSetting(key) {
   return store.settings.delete(key);
 }
 
-function createNotification({ type, message, audience }) {
-  const id = generateId('notification');
+function createNotification({ id, type, message, audience, createdAt }) {
+  const identifier = id || generateId('notification');
   const notification = {
-    id,
+    id: identifier,
     type,
     message,
     audience,
     status: 'QUEUED',
-    createdAt: new Date().toISOString()
+    createdAt: createdAt || new Date().toISOString()
   };
-  store.notifications.set(id, notification);
+  store.notifications.set(identifier, notification);
   return notification;
 }
 
@@ -543,18 +607,18 @@ function deleteNotification(id) {
   return store.notifications.delete(id);
 }
 
-function createAuditLog({ actorId, action, resource, metadata }) {
-  const id = generateId('audit');
+function createAuditLog({ id, actorId, action, resource, metadata, createdAt }) {
+  const identifier = id || generateId('audit');
   const log = {
-    id,
+    id: identifier,
     actorId,
     action,
     resource,
     metadata: metadata || {},
     flagged: false,
-    createdAt: new Date().toISOString()
+    createdAt: createdAt || new Date().toISOString()
   };
-  store.auditLogs.set(id, log);
+  store.auditLogs.set(identifier, log);
   return log;
 }
 
@@ -604,13 +668,13 @@ function searchAuditLogs(filters) {
   });
 }
 
-function createIntegration({ name, config, status }) {
+function createIntegration({ name, config, status, createdAt }) {
   const integration = {
     name,
     config: config || {},
     status: status || 'INACTIVE',
     lastTestedAt: null,
-    createdAt: new Date().toISOString()
+    createdAt: createdAt || new Date().toISOString()
   };
   store.integrations.set(name, integration);
   return integration;
@@ -648,16 +712,16 @@ function testIntegration(name, payload) {
   };
 }
 
-function createInvitation({ email, role }) {
-  const id = generateId('invitation');
+function createInvitation({ id, email, role, createdAt }) {
+  const identifier = id || generateId('invitation');
   const invitation = {
-    id,
+    id: identifier,
     email,
     role,
     status: 'SENT',
-    createdAt: new Date().toISOString()
+    createdAt: createdAt || new Date().toISOString()
   };
-  store.invitations.set(id, invitation);
+  store.invitations.set(identifier, invitation);
   return invitation;
 }
 
@@ -670,15 +734,15 @@ function listSystemSessions() {
   return toArray('systemSessions');
 }
 
-function createSystemSession({ userId, userAgent }) {
-  const id = generateId('session');
+function createSystemSession({ id, userId, userAgent, createdAt }) {
+  const identifier = id || generateId('session');
   const session = {
-    id,
+    id: identifier,
     userId,
     userAgent,
-    createdAt: new Date().toISOString()
+    createdAt: createdAt || new Date().toISOString()
   };
-  store.systemSessions.set(id, session);
+  store.systemSessions.set(identifier, session);
   return session;
 }
 

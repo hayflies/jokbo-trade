@@ -79,6 +79,7 @@ router.get('/users', (req, res) => {
  *         required: true
  *         schema:
  *           type: string
+ *           example: user_admin_controller
  *     responses:
  *       200:
  *         description: User record
@@ -105,6 +106,7 @@ router.get('/users/:id', (req, res) => {
  *         required: true
  *         schema:
  *           type: string
+ *           example: user_admin_controller
  *       - in: query
  *         name: limit
  *         schema:
@@ -154,6 +156,7 @@ router.get('/auctions', (req, res) => {
  *         required: true
  *         schema:
  *           type: string
+ *           example: auction_linear_notes
  *     responses:
  *       200:
  *         description: Auction detail
@@ -180,6 +183,7 @@ router.get('/auctions/:id', (req, res) => {
  *         required: true
  *         schema:
  *           type: string
+ *           example: auction_linear_notes
  *     responses:
  *       200:
  *         description: Bid array
@@ -220,6 +224,7 @@ router.get('/reports', (req, res) => {
  *         required: true
  *         schema:
  *           type: string
+ *           example: report_fraud_suspicion
  *     responses:
  *       200:
  *         description: Report detail
@@ -260,6 +265,7 @@ router.get('/transactions', (req, res) => {
  *         required: true
  *         schema:
  *           type: string
+ *           example: txn_linear_sale
  *     responses:
  *       200:
  *         description: Transaction detail
@@ -368,6 +374,7 @@ router.post(
  *         required: true
  *         schema:
  *           type: string
+ *           example: user_quality_reviewer
  *     requestBody:
  *       required: true
  *       content:
@@ -459,6 +466,7 @@ router.post(
  *         required: true
  *         schema:
  *           type: string
+ *           example: auction_linear_notes
  *     requestBody:
  *       required: true
  *       content:
@@ -562,6 +570,7 @@ router.post(
  *         required: true
  *         schema:
  *           type: string
+ *           example: report_fraud_suspicion
  *     requestBody:
  *       required: true
  *       content:
@@ -653,6 +662,7 @@ router.post(
  *         required: true
  *         schema:
  *           type: string
+ *           example: txn_linear_sale
  *     requestBody:
  *       required: true
  *       content:
@@ -786,6 +796,7 @@ router.post(
  *         required: true
  *         schema:
  *           type: string
+ *           example: announcement_system_maintenance
  *     responses:
  *       200:
  *         description: Announcement published
@@ -967,6 +978,7 @@ router.post(
  *         required: true
  *         schema:
  *           type: string
+ *           example: user_admin_controller
  *     requestBody:
  *       required: true
  *       content:
@@ -1013,6 +1025,7 @@ router.put(
  *         required: true
  *         schema:
  *           type: string
+ *           example: user_quality_reviewer
  *     requestBody:
  *       required: true
  *       content:
@@ -1056,6 +1069,7 @@ router.put(
  *         required: true
  *         schema:
  *           type: string
+ *           example: auction_linear_notes
  *     requestBody:
  *       required: true
  *       content:
@@ -1110,6 +1124,7 @@ router.put(
  *         required: true
  *         schema:
  *           type: string
+ *           example: auction_linear_notes
  *     requestBody:
  *       required: true
  *       content:
@@ -1153,6 +1168,7 @@ router.put(
  *         required: true
  *         schema:
  *           type: string
+ *           example: report_fraud_suspicion
  *     requestBody:
  *       required: true
  *       content:
@@ -1199,6 +1215,7 @@ router.put(
  *         required: true
  *         schema:
  *           type: string
+ *           example: report_fraud_suspicion
  *     requestBody:
  *       required: true
  *       content:
@@ -1242,6 +1259,7 @@ router.put(
  *         required: true
  *         schema:
  *           type: string
+ *           example: txn_linear_sale
  *     requestBody:
  *       required: true
  *       content:
@@ -1290,6 +1308,7 @@ router.put(
  *         required: true
  *         schema:
  *           type: string
+ *           example: txn_linear_sale
  *     requestBody:
  *       required: true
  *       content:
@@ -1333,6 +1352,7 @@ router.put(
  *         required: true
  *         schema:
  *           type: string
+ *           example: payout_linear_seller
  *     requestBody:
  *       required: true
  *       content:
@@ -1381,6 +1401,7 @@ router.put(
  *         required: true
  *         schema:
  *           type: string
+ *           example: payout_linear_seller
  *     requestBody:
  *       required: true
  *       content:
@@ -1424,6 +1445,7 @@ router.put(
  *         required: true
  *         schema:
  *           type: string
+ *           example: announcement_system_maintenance
  *     requestBody:
  *       required: true
  *       content:
@@ -1470,6 +1492,7 @@ router.put(
  *         required: true
  *         schema:
  *           type: string
+ *           example: platformName
  *     requestBody:
  *       required: true
  *       content:
@@ -1510,6 +1533,7 @@ router.put(
  *         required: true
  *         schema:
  *           type: string
+ *           example: notification_admin_welcome
  *     requestBody:
  *       required: true
  *       content:
@@ -1556,6 +1580,7 @@ router.put(
  *         required: true
  *         schema:
  *           type: string
+ *           example: audit_seed_bootstrap
  *     requestBody:
  *       required: true
  *       content:
@@ -1602,6 +1627,7 @@ router.put(
  *         required: true
  *         schema:
  *           type: string
+ *           example: integration_email_delivery
  *     requestBody:
  *       required: true
  *       content:
@@ -1646,6 +1672,7 @@ router.put(
  *         required: true
  *         schema:
  *           type: string
+ *           example: user_admin_controller
  *     responses:
  *       200:
  *         description: Deletion status
@@ -1666,11 +1693,13 @@ router.delete('/users/:id', (req, res) => {
  *         required: true
  *         schema:
  *           type: string
+ *           example: user_quality_reviewer
  *       - in: path
  *         name: warningId
  *         required: true
  *         schema:
  *           type: string
+ *           example: warning_reviewer_failed_login
  *     responses:
  *       200:
  *         description: Removed warning payload when successful
@@ -1697,6 +1726,7 @@ router.delete('/users/:id/warnings/:warningId', (req, res) => {
  *         required: true
  *         schema:
  *           type: string
+ *           example: auction_linear_notes
  *     responses:
  *       200:
  *         description: Deletion status
@@ -1717,11 +1747,13 @@ router.delete('/auctions/:id', (req, res) => {
  *         required: true
  *         schema:
  *           type: string
+ *           example: auction_linear_notes
  *       - in: path
  *         name: bidId
  *         required: true
  *         schema:
  *           type: string
+ *           example: bid_linear_quality
  *     responses:
  *       200:
  *         description: Removed bid payload when successful
@@ -1748,6 +1780,7 @@ router.delete('/auctions/:id/bids/:bidId', (req, res) => {
  *         required: true
  *         schema:
  *           type: string
+ *           example: report_fraud_suspicion
  *     responses:
  *       200:
  *         description: Deletion status
@@ -1768,6 +1801,7 @@ router.delete('/reports/:id', (req, res) => {
  *         required: true
  *         schema:
  *           type: string
+ *           example: txn_linear_sale
  *     responses:
  *       200:
  *         description: Deletion status
@@ -1788,6 +1822,7 @@ router.delete('/transactions/:id', (req, res) => {
  *         required: true
  *         schema:
  *           type: string
+ *           example: payout_linear_seller
  *     responses:
  *       200:
  *         description: Deletion status
@@ -1808,6 +1843,7 @@ router.delete('/payouts/:id', (req, res) => {
  *         required: true
  *         schema:
  *           type: string
+ *           example: announcement_system_maintenance
  *     responses:
  *       200:
  *         description: Deletion status
@@ -1828,6 +1864,7 @@ router.delete('/announcements/:id', (req, res) => {
  *         required: true
  *         schema:
  *           type: string
+ *           example: platformName
  *     responses:
  *       200:
  *         description: Deletion status
@@ -1848,6 +1885,7 @@ router.delete('/settings/:key', (req, res) => {
  *         required: true
  *         schema:
  *           type: string
+ *           example: notification_admin_welcome
  *     responses:
  *       200:
  *         description: Deletion status
@@ -1868,6 +1906,7 @@ router.delete('/notifications/:id', (req, res) => {
  *         required: true
  *         schema:
  *           type: string
+ *           example: audit_seed_bootstrap
  *     responses:
  *       200:
  *         description: Deletion status
@@ -1888,6 +1927,7 @@ router.delete('/audit-logs/:id', (req, res) => {
  *         required: true
  *         schema:
  *           type: string
+ *           example: integration_email_delivery
  *     responses:
  *       200:
  *         description: Deletion status
@@ -1922,6 +1962,7 @@ router.delete('/system/cache', (req, res) => {
  *         required: true
  *         schema:
  *           type: string
+ *           example: session_admin_seed
  *     responses:
  *       200:
  *         description: Deletion status
@@ -1942,6 +1983,7 @@ router.delete('/system/sessions/:id', (req, res) => {
  *         required: true
  *         schema:
  *           type: string
+ *           example: invitation_moderator_seed
  *     responses:
  *       200:
  *         description: Deletion status

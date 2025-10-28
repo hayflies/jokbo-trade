@@ -30,6 +30,7 @@ function buildHelmetConfig({ isSecure = false } = {}) {
     },
     crossOriginEmbedderPolicy: false,
     crossOriginResourcePolicy: { policy: 'cross-origin' },
+    originAgentCluster: true,
     hsts: false,
     referrerPolicy: { policy: 'no-referrer' }
   };
