@@ -1,0 +1,131 @@
+<%- include('../partials/header', { title: '관리자 - 데이터 구조' }) %>
+<section class="card">
+    <div class="card-header">
+        <h2>데이터베이스 구조 모니터링</h2>
+        <p class="muted">
+            MariaDB는 사용자 로그인, 프로필, 평판 점수와 같은 일관 데이터를 관리하고,<br>
+            MongoDB는 경매 아이템과 실시간 입찰 내역처럼 빠르게 변하는 유연 데이터를 보관합니다.<br>
+            아래 탭을 전환하여 두 데이터 저장소의 테이블과 컬렉션 구조를 확인하세요.
+        </p>
+    </div>
+
+
+  <div class="data-tabs" role="tablist" aria-label="데이터 저장소 선택">
+    <button class="data-tab is-active" data-target="maria-panel" id="maria-tab" role="tab" aria-selected="true" aria-controls="maria-panel">
+      MariaDB 구조
+    </button>
+    <button class="data-tab" data-target="mongo-panel" id="mongo-tab" role="tab" aria-selected="false" aria-controls="mongo-panel">
+      MongoDB 구조
+    </button>
+  </div>
+
+  <section id="maria-panel" class="data-panel is-active" role="tabpanel" tabindex="0" aria-labelledby="maria-tab">
+    <header class="panel-header">
+      <h3>MariaDB (<%= databaseName %>)</h3>
+      <p class="muted">사용자 정보와 평판 기록 등 핵심적인 관계형 데이터를 보관하는 테이블 구조입니다.</p>
+    </header>
+    <div class="schema-grid">
+      <% if (!mariaTables.length) { %>
+      <p class="muted">현재 데이터베이스에 정의된 테이블이 없습니다.</p>
+      <% } %>
+      <% mariaTables.forEach(function (table) { %>
+      <article class="schema-card">
+        <header class="schema-card__header">
+          <div>
+            <h4><%= table.name %></h4>
+            <p class="muted">예상 레코드 수: <strong><%= table.rowCount.toLocaleString('ko-KR') %></strong></p>
+          </div>
+        </header>
+        <div class="schema-card__body">
+          <% if (!table.columns.length) { %>
+          <p class="muted">컬럼 정보가 존재하지 않습니다.</p>
+          <% } else { %>
+          <table class="schema-table">
+            <thead>
+              <tr>
+                <th scope="col">컬럼</th>
+                <th scope="col">자료형</th>
+                <th scope="col">NULL</th>
+                <th scope="col">키</th>
+                <th scope="col">기본값</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% table.columns.forEach(function (column) { %>
+              <tr>
+                <th scope="row"><code><%= column.name %></code></th>
+                <td><%= column.type %></td>
+                <td><%= column.nullable ? '허용' : '금지' %></td>
+                <td><%= column.key || '-' %></td>
+                <td><%= column.defaultValue !== null ? column.defaultValue : '-' %></td>
+              </tr>
+              <% }); %>
+            </tbody>
+          </table>
+          <% } %>
+        </div>
+      </article>
+      <% }); %>
+    </div>
+  </section>
+
+  <section id="mongo-panel" class="data-panel" role="tabpanel" tabindex="0" aria-labelledby="mongo-tab" hidden>
+    <header class="panel-header">
+      <h3>MongoDB (<%= mongoUri %>)</h3>
+      <p class="muted">경매 아이템, 실시간 입찰 내역 등 문서 지향 데이터의 컬렉션 구조입니다. 필드 목록은 샘플 문서를 기반으로 요약됩니다.</p>
+    </header>
+    <div class="schema-grid">
+      <% if (!mongoCollections.length) { %>
+      <p class="muted">현재 데이터베이스에 생성된 컬렉션이 없습니다.</p>
+      <% } %>
+      <% mongoCollections.forEach(function (collection) { %>
+      <article class="schema-card">
+        <header class="schema-card__header">
+          <div>
+            <h4><%= collection.name %></h4>
+            <p class="muted">문서 수 추정: <strong><%= collection.documentCount.toLocaleString('ko-KR') %></strong></p>
+          </div>
+        </header>
+        <div class="schema-card__body">
+          <% if (!collection.fields.length) { %>
+          <p class="muted">샘플 문서를 찾을 수 없어 필드 정보를 추론할 수 없습니다.</p>
+          <% } else { %>
+          <ul class="schema-field-list">
+            <% collection.fields.forEach(function (field) { %>
+            <li><code><%= field %></code></li>
+            <% }); %>
+          </ul>
+          <% } %>
+        </div>
+      </article>
+      <% }); %>
+    </div>
+  </section>
+</section>
+
+<script>
+  (function () {
+    const tabs = document.querySelectorAll('.data-tab');
+    const panels = document.querySelectorAll('.data-panel');
+
+    tabs.forEach(function (tab) {
+      tab.addEventListener('click', function () {
+        const targetId = tab.getAttribute('data-target');
+        tabs.forEach(function (button) {
+          const isActive = button === tab;
+          button.classList.toggle('is-active', isActive);
+          button.setAttribute('aria-selected', isActive ? 'true' : 'false');
+        });
+        panels.forEach(function (panel) {
+          const isTarget = panel.id === targetId;
+          panel.classList.toggle('is-active', isTarget);
+          panel.toggleAttribute('hidden', !isTarget);
+          if (isTarget) {
+            panel.focus();
+          }
+        });
+      });
+    });
+  })();
+</script>
+<%- include('../partials/footer') %>
