@@ -24,7 +24,7 @@
         <% if (item.type === 'REVIEW' && item.review) { %>
         <strong><%= item.review.bidderNickname %></strong>님이
         <span class="rating"><%= Number(item.review.score).toFixed(1) %>★</span>
-        평가와 후기를 남겼습니다.
+        평점과 후기를 남겼습니다.
         <% if (item.review.comment) { %>
         <q class="notification-comment"><%= item.review.comment %></q>
         <% } %>

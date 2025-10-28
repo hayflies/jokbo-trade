@@ -50,6 +50,80 @@
       });
     }
 
+    const auctionForm = document.querySelector('[data-auction-form]');
+    if (auctionForm) {
+      const endTimeInput = auctionForm.querySelector('[data-end-time-input]');
+      const endTimeFeedback = auctionForm.querySelector('[data-end-time-feedback]');
+      const defaultEndTimeMessage = endTimeFeedback
+        ? endTimeFeedback.textContent.trim() || '마감 시간은 현재 시각 이후여야 합니다.'
+        : '마감 시간은 현재 시각 이후여야 합니다.';
+
+      const toggleEndTimeFeedback = (show, message) => {
+        if (!endTimeFeedback) {
+          return;
+        }
+        if (show) {
+          endTimeFeedback.textContent = message || defaultEndTimeMessage;
+          endTimeFeedback.classList.remove('hidden');
+        } else {
+          endTimeFeedback.classList.add('hidden');
+        }
+      };
+
+      const validateEndTime = () => {
+        if (!endTimeInput) {
+          return true;
+        }
+        const raw = endTimeInput.value;
+        if (!raw) {
+          endTimeInput.setCustomValidity('');
+          toggleEndTimeFeedback(false);
+          return true;
+        }
+        const parsed = new Date(raw);
+        if (Number.isNaN(parsed.getTime())) {
+          const message = '유효한 마감 시간을 입력하세요.';
+          endTimeInput.setCustomValidity(message);
+          toggleEndTimeFeedback(true, message);
+          return false;
+        }
+        const now = new Date();
+        if (parsed.getTime() <= now.getTime()) {
+          const message = defaultEndTimeMessage;
+          endTimeInput.setCustomValidity(message);
+          toggleEndTimeFeedback(true, message);
+          return false;
+        }
+        endTimeInput.setCustomValidity('');
+        toggleEndTimeFeedback(false);
+        return true;
+      };
+
+      if (endTimeInput) {
+        endTimeInput.addEventListener('input', () => {
+          endTimeInput.setCustomValidity('');
+          validateEndTime();
+        });
+        endTimeInput.addEventListener('blur', validateEndTime);
+        endTimeInput.addEventListener('change', validateEndTime);
+        endTimeInput.addEventListener('invalid', () => {
+          toggleEndTimeFeedback(true, endTimeInput.validationMessage || defaultEndTimeMessage);
+        });
+      }
+
+      auctionForm.addEventListener('submit', (event) => {
+        if (!validateEndTime()) {
+          event.preventDefault();
+          if (endTimeInput) {
+            endTimeInput.focus();
+            if (typeof endTimeInput.reportValidity === 'function') {
+              endTimeInput.reportValidity();
+            }
+          }
+        }
+      });
+    }
+
     const starRatings = document.querySelectorAll('[data-star-rating]');
     starRatings.forEach((container) => {
       const hiddenInput = container.querySelector('[data-star-rating-value]');

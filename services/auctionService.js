@@ -146,7 +146,7 @@ async function placeBid({ auctionId, bidderId, bidderNickname, amount }) {
 
   const oneMinute = 60 * 1000;
   if (auction.endTime.getTime() - now.getTime() <= oneMinute) {
-    auction.endTime = new Date(now.getTime() + oneMinute);
+      auction.endTime = new Date(auction.endTime.getTime() + oneMinute);
   }
 
   await auction.save();

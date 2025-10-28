@@ -34,8 +34,8 @@ async function initMaria() {
     // ───────────── users 테이블 ─────────────
     await pool.query(`
         CREATE TABLE IF NOT EXISTS users (
-                                             id INT AUTO_INCREMENT PRIMARY KEY,
-                                             email VARCHAR(255) UNIQUE NOT NULL,
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            email VARCHAR(255) UNIQUE NOT NULL,
             password_hash VARCHAR(255) NOT NULL,
             real_name VARCHAR(255) NOT NULL,
             student_id VARCHAR(50) NOT NULL,
@@ -50,10 +50,10 @@ async function initMaria() {
     // ───────────── reputation_reviews 테이블 ─────────────
     await pool.query(`
         CREATE TABLE IF NOT EXISTS reputation_reviews (
-                                                          id INT AUTO_INCREMENT PRIMARY KEY,
-                                                          reviewer_id INT NOT NULL,
-                                                          target_id INT NOT NULL,
-                                                          auction_id VARCHAR(255) NOT NULL,
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            reviewer_id INT NOT NULL,
+            target_id INT NOT NULL,
+            auction_id VARCHAR(255) NOT NULL,
             score DECIMAL(3,1) NOT NULL,
             comment TEXT,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
