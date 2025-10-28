@@ -139,7 +139,10 @@ router.post(
  *             required: [score]
  *             properties:
  *               score:
- *                 type: integer
+ *                 type: number
+ *                 minimum: 1
+ *                 maximum: 5
+ *                 description: 0.5 point increments supported
  *               comment:
  *                 type: string
  *     responses:
@@ -149,7 +152,19 @@ router.post(
 router.post(
   '/auctions/:id/rate',
   ensureAuthenticated,
-  [body('score').isInt({ min: 1, max: 5 })],
+  [
+    body('score')
+      .isFloat({ min: 1, max: 5 })
+      .withMessage('Score must be between 1 and 5.')
+      .custom((value) => {
+        const numeric = Number(value);
+        if (!Number.isFinite(numeric)) {
+          return false;
+        }
+        return Math.round(numeric * 2) === numeric * 2;
+      })
+      .withMessage('Score must be in 0.5 increments.')
+  ],
   async (req, res, next) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -170,13 +185,51 @@ router.post(
       if (!userHasBid) {
         return res.status(400).json({ message: 'Only bidders can rate this auction' });
       }
-      await recordReputation({
-        reviewerId: req.session.user.id,
-        targetId: auction.sellerId,
-        score: Number(req.body.score),
-        comment: req.body.comment || ''
+      if (!Array.isArray(auction.reviews)) {
+        auction.reviews = [];
+      }
+      const alreadyReviewed = auction.reviews.some(
+        (review) => String(review.bidderId) === String(req.session.user.id)
+      );
+      if (alreadyReviewed) {
+        return res.status(400).json({ message: 'Rating already submitted for this auction' });
+      }
+      const normalizedScore = Number(req.body.score);
+      if (!Number.isFinite(normalizedScore)) {
+        return res.status(400).json({ message: 'Invalid score supplied' });
+      }
+      const comment = req.body.comment ? String(req.body.comment).trim() : '';
+      let createdAt;
+      let reviewPayload;
+      try {
+        await recordReputation({
+          reviewerId: req.session.user.id,
+          targetId: auction.sellerId,
+          auctionId: String(auction.id),
+          score: normalizedScore,
+          comment
+        });
+      } catch (error) {
+        if (error.code === 'REVIEW_EXISTS') {
+          return res.status(400).json({ message: 'Rating already submitted for this auction' });
+        }
+        throw error;
+      }
+      createdAt = new Date();
+      reviewPayload = {
+        bidderId: req.session.user.id,
+        bidderNickname: req.session.user.nickname,
+        score: normalizedScore,
+        comment,
+        createdAt
+      };
+      auction.reviews.push(reviewPayload);
+      auction.markModified('reviews');
+      await auction.save();
+      res.json({
+        message: 'Rating saved',
+        review: reviewPayload
       });
-      res.json({ message: 'Rating saved' });
     } catch (error) {
       next(error);
     }

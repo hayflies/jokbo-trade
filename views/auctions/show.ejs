@@ -8,6 +8,7 @@
   const bidLogList = typeof bidLogs !== 'undefined' && Array.isArray(bidLogs) ? bidLogs : [];
   const activeUser = typeof currentUser === 'undefined' ? null : currentUser;
   const bidderView = typeof userHasBid === 'undefined' ? false : userHasBid;
+  const existingReview = typeof userReview !== 'undefined' && userReview ? userReview : null;
 %>
 <section
   class="card"
@@ -55,19 +56,13 @@
       >자료 다운로드</a
     >
     <p class="muted download-hint <%= downloadAllowed ? 'hidden' : '' %>" data-download-hint>
-      경매 종료 후 판매자와 입찰에 참여한 사용자만 자료를 내려받을 수 있습니다.
+      경매 종료 후 판매자와 낙찰자만 자료를 내려받을 수 있습니다.
     </p>
     <p
       class="alert alert-success inline-alert <%= auction.status === 'CLOSED' && winnerView ? '' : 'hidden' %>"
       data-winner-message
     >
       축하합니다! 이 경매의 낙찰자입니다.
-    </p>
-    <p
-      class="muted emphasis-message <%= auction.status === 'CLOSED' && sellerView && auction.winnerNickname ? '' : 'hidden' %>"
-      data-seller-winner-message
-    >
-      낙찰자에게 자료 전달을 준비해주세요.
     </p>
     <p
       class="muted emphasis-message <%= auction.status === 'CLOSED' && sellerView && !auction.winnerNickname ? '' : 'hidden' %>"
@@ -165,7 +160,45 @@
       <button type="submit" class="btn-secondary">평가 등록</button>
     </form>
     <% } else { %>
-    <p class="muted">입찰에 참여한 사용자만 경매 종료 후 평가를 남길 수 있습니다.</p>
+    <p class="muted">
+      <% if (existingReview) { %>
+      이미 이 경매에 대한 평가를 남기셨습니다.
+      <% } else if (!bidderView) { %>
+      입찰에 참여한 사용자만 경매 종료 후 평가를 남길 수 있습니다.
+      <% } else if (auction.status !== 'CLOSED') { %>
+      경매 종료 후에만 평가를 남길 수 있습니다.
+      <% } else if (sellerView) { %>
+      자신의 경매에는 평가를 남길 수 없습니다.
+      <% } else { %>
+      평가를 남길 수 있는 조건을 충족하지 않습니다.
+      <% } %>
+    </p>
+    <% } %>
+  </section>
+
+  <section class="reputation-list">
+    <h3>거래 후기</h3>
+    <% if (Array.isArray(auction.reviews) && auction.reviews.length) { %>
+    <ul class="review-list">
+      <% auction.reviews.forEach(function (review) { %>
+      <li class="review-item<%= existingReview && String(existingReview.bidderId) === String(review.bidderId) ? ' is-mine' : '' %>">
+        <div class="review-header">
+          <strong><%= review.bidderNickname %></strong>
+          <span class="rating"><%= Number(review.score).toFixed(1) %>★</span>
+          <time datetime="<%= new Date(review.createdAt).toISOString() %>">
+            <%= new Date(review.createdAt).toLocaleString('ko-KR') %>
+          </time>
+        </div>
+        <% if (review.comment) { %>
+        <p class="review-comment"><%= review.comment %></p>
+        <% } else { %>
+        <p class="review-comment muted">한 줄 평이 등록되지 않았습니다.</p>
+        <% } %>
+      </li>
+      <% }); %>
+    </ul>
+    <% } else { %>
+    <p class="muted">아직 등록된 거래 후기가 없습니다.</p>
     <% } %>
   </section>
 

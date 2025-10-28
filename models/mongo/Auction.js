@@ -10,6 +10,17 @@ const bidSchema = new mongoose.Schema(
   { _id: false }
 );
 
+const reviewSchema = new mongoose.Schema(
+  {
+    bidderId: { type: Number, required: true },
+    bidderNickname: { type: String, required: true },
+    score: { type: Number, required: true },
+    comment: { type: String, default: '' },
+    createdAt: { type: Date, default: Date.now }
+  },
+  { _id: false }
+);
+
 const auctionSchema = new mongoose.Schema(
   {
     title: { type: String, required: true },
@@ -22,6 +33,7 @@ const auctionSchema = new mongoose.Schema(
     filePath: { type: String, required: true },
     fileOriginalName: { type: String, required: true },
     bids: [bidSchema],
+    reviews: [reviewSchema],
     createdAt: { type: Date, default: Date.now },
     status: { type: String, default: 'OPEN', enum: ['OPEN', 'CLOSED'] },
     winnerId: { type: Number, default: null },

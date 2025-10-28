@@ -273,8 +273,16 @@ router.get('/:id', ensureAuthenticated, ensureValidAuctionId, async (req, res, n
         const hasBid = Array.isArray(auction.bids)
             ? auction.bids.some((bid) => String(bid.bidderId) === currentUserIdStr)
             : false;
+        const existingReview = Array.isArray(auction.reviews)
+            ? auction.reviews.find((review) => String(review.bidderId) === currentUserIdStr)
+            : null;
         const canBid = isAuctionOpen && !isSeller;
-        const canRate = auction.status === 'CLOSED' && hasBid && !isSeller;
+        const canRate = auction.status === 'CLOSED' && hasBid && !isSeller && !existingReview;
+        if (Array.isArray(auction.reviews)) {
+            auction.reviews = auction.reviews
+                .slice()
+                .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        }
         const allowDownload = auction.status === 'CLOSED' && (isSeller || hasBid);
         const bidLogs = await listBidLogs(auction.id);
         res.render('auctions/show', {
@@ -285,7 +293,8 @@ router.get('/:id', ensureAuthenticated, ensureValidAuctionId, async (req, res, n
             canBid,
             canRate,
             allowDownload,
-            userHasBid: hasBid
+            userHasBid: hasBid,
+            userReview: existingReview
         });
     } catch (error) {
         next(error);
@@ -380,9 +389,10 @@ router.post(
  *             required: [score]
  *             properties:
  *               score:
- *                 type: integer
+ *                 type: number
  *                 minimum: 1
  *                 maximum: 5
+ *                 description: 0.5 point increments supported
  *               comment:
  *                 type: string
  *     responses:
@@ -437,12 +447,51 @@ router.post(
           json: () => res.json({ message: 'Invalid score supplied' })
         });
       }
-      await recordReputation({
-        reviewerId: req.session.user.id,
-        targetId: auction.sellerId,
+      const comment = req.body.comment ? String(req.body.comment).trim() : '';
+      if (!Array.isArray(auction.reviews)) {
+        auction.reviews = [];
+      }
+      const alreadyReviewed = auction.reviews.some(
+        (review) => String(review.bidderId) === String(req.session.user.id)
+      );
+      if (alreadyReviewed) {
+        const message = '이미 이 경매에 대한 평가를 등록하셨습니다.';
+        req.flash('warning', message);
+        return res.status(400).format({
+          html: () => res.redirect(`/auctions/${req.params.id}`),
+          json: () => res.json({ message })
+        });
+      }
+      let reviewPayload;
+      try {
+        await recordReputation({
+          reviewerId: req.session.user.id,
+          targetId: auction.sellerId,
+          auctionId: String(auction.id),
+          score: normalizedScore,
+          comment
+        });
+      } catch (error) {
+        if (error.code === 'REVIEW_EXISTS') {
+          const message = '이미 이 경매에 대한 평가를 등록하셨습니다.';
+          req.flash('warning', message);
+          return res.status(400).format({
+            html: () => res.redirect(`/auctions/${req.params.id}`),
+            json: () => res.json({ message })
+          });
+        }
+        throw error;
+      }
+      reviewPayload = {
+        bidderId: req.session.user.id,
+        bidderNickname: req.session.user.nickname,
         score: normalizedScore,
-        comment: req.body.comment ? String(req.body.comment).trim() : ''
-      });
+        comment,
+        createdAt: new Date()
+      };
+      auction.reviews.push(reviewPayload);
+      auction.markModified('reviews');
+      await auction.save();
       const updatedSeller = await findUserById(auction.sellerId);
       if (updatedSeller && req.session.user && Number(req.session.user.id) === Number(updatedSeller.id)) {
         req.session.user.reputationScore = Number(updatedSeller.reputation_score);
@@ -451,7 +500,11 @@ router.post(
       req.flash('success', '평가가 등록되었습니다.');
       return res.status(200).format({
         html: () => res.redirect(`/auctions/${req.params.id}`),
-        json: () => res.json({ message: 'Reputation recorded' })
+        json: () =>
+          res.json({
+            message: 'Reputation recorded',
+            review: reviewPayload
+          })
       });
     } catch (error) {
       next(error);

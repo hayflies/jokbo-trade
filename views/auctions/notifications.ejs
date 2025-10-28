@@ -16,12 +16,27 @@
         <% } else if (item.isWinner) { %>
         <span class="badge badge-success">낙찰자</span>
         <% } %>
+        <% if (item.type === 'REVIEW') { %>
+        <span class="badge badge-info">후기</span>
+        <% } %>
       </div>
-      <p class="notification-message"><%= item.message %></p>
+      <p class="notification-message">
+        <% if (item.type === 'REVIEW' && item.review) { %>
+        <strong><%= item.review.bidderNickname %></strong>님이
+        <span class="rating"><%= Number(item.review.score).toFixed(1) %>★</span>
+        평가와 후기를 남겼습니다.
+        <% if (item.review.comment) { %>
+        <q class="notification-comment"><%= item.review.comment %></q>
+        <% } %>
+        <% } else { %>
+        <%= item.message %>
+        <% } %>
+      </p>
       <p class="notification-meta">
-        종료 시각:
-        <time datetime="<%= (item.auction.closedAt || item.auction.endTime).toISOString() %>">
-          <%= (item.auction.closedAt || item.auction.endTime).toLocaleString('ko-KR') %>
+        <% const referenceTime = item.type === 'REVIEW' && item.review && item.review.createdAt ? new Date(item.review.createdAt) : new Date(item.auction.closedAt || item.auction.endTime); %>
+        <%= item.type === 'REVIEW' ? '등록 시각' : '종료 시각' %>:
+        <time datetime="<%= referenceTime.toISOString() %>">
+          <%= referenceTime.toLocaleString('ko-KR') %>
         </time>
       </p>
     </li>

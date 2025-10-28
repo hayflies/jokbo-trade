@@ -185,7 +185,9 @@ async function listUserNotifications(userId) {
     $or: [{ sellerId: userId }, { winnerId: userId }]
   }).sort(buildSort('CLOSED'));
 
-  return auctions.map((auctionDoc) => {
+  const notifications = [];
+
+  auctions.forEach((auctionDoc) => {
     const auction = auctionDoc.toObject({ virtuals: true });
     const isSeller = auction.sellerId === userId;
     const isWinner = auction.winnerId === userId;
@@ -200,14 +202,41 @@ async function listUserNotifications(userId) {
     } else {
       message = '경매 결과를 확인해주세요.';
     }
-    return {
+
+    notifications.push({
       auction,
       isSeller,
       isWinner,
       hasWinner,
-      message
-    };
+      message,
+      type: 'STATUS',
+      createdAt: auction.closedAt || auction.endTime
+    });
+
+    if (isSeller && Array.isArray(auction.reviews) && auction.reviews.length) {
+      auction.reviews.forEach((review) => {
+        const createdAt = review.createdAt ? new Date(review.createdAt) : auction.closedAt || auction.endTime;
+        notifications.push({
+          auction,
+          isSeller: true,
+          isWinner,
+          hasWinner,
+          message: `${review.bidderNickname}님이 거래 후기를 남겼습니다.`,
+          type: 'REVIEW',
+          createdAt,
+          review
+        });
+      });
+    }
   });
+
+  notifications.sort((a, b) => {
+    const left = new Date(a.createdAt || a.auction.closedAt || a.auction.endTime).getTime();
+    const right = new Date(b.createdAt || b.auction.closedAt || b.auction.endTime).getTime();
+    return right - left;
+  });
+
+  return notifications;
 }
 
 async function deleteAuctionFile(filePath) {

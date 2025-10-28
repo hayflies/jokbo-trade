@@ -36,14 +36,22 @@ async function findUserById(id) {
   return rows[0];
 }
 
-async function recordReputation({ reviewerId, targetId, score, comment }) {
+async function recordReputation({ reviewerId, targetId, auctionId, score, comment }) {
   const pool = getMariaPool();
-  await pool.query(
-    `INSERT INTO reputation_reviews (reviewer_id, target_id, score, comment)
-     VALUES (?, ?, ?, ?)
-     ON DUPLICATE KEY UPDATE score = VALUES(score), comment = VALUES(comment), created_at = CURRENT_TIMESTAMP`,
-    [reviewerId, targetId, score, comment]
-  );
+  try {
+    await pool.query(
+      `INSERT INTO reputation_reviews (reviewer_id, target_id, auction_id, score, comment)
+       VALUES (?, ?, ?, ?, ?)`,
+      [reviewerId, targetId, auctionId, score, comment]
+    );
+  } catch (error) {
+    if (error && error.code === 'ER_DUP_ENTRY') {
+      const duplicateError = new Error('이미 평가를 등록하셨습니다.');
+      duplicateError.code = 'REVIEW_EXISTS';
+      throw duplicateError;
+    }
+    throw error;
+  }
 
   const [summary] = await pool.query(
     `SELECT AVG(score) AS avgScore, COUNT(*) AS ratingCount FROM reputation_reviews WHERE target_id = ?`,
