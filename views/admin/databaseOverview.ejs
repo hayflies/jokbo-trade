@@ -10,11 +10,11 @@
     </div>
 
 
-  <div class="data-tabs" role="tablist" aria-label="데이터 저장소 선택">
-    <button class="data-tab is-active" data-target="maria-panel" id="maria-tab" role="tab" aria-selected="true" aria-controls="maria-panel">
+  <div class="data-tabs" role="tablist" aria-label="데이터 저장소 선택" data-tab-group="database-overview">
+    <button type="button" class="data-tab is-active" data-target="maria-panel" id="maria-tab" role="tab" aria-selected="true" aria-controls="maria-panel">
       MariaDB 구조
     </button>
-    <button class="data-tab" data-target="mongo-panel" id="mongo-tab" role="tab" aria-selected="false" aria-controls="mongo-panel">
+    <button type="button" class="data-tab" data-target="mongo-panel" id="mongo-tab" role="tab" aria-selected="false" aria-controls="mongo-panel">
       MongoDB 구조
     </button>
   </div>
@@ -22,7 +22,6 @@
   <section id="maria-panel" class="data-panel is-active" role="tabpanel" tabindex="0" aria-labelledby="maria-tab">
     <header class="panel-header">
       <h3>MariaDB (<%= databaseName %>)</h3>
-      <p class="muted">사용자 정보와 평판 기록 등 핵심적인 관계형 데이터를 보관하는 테이블 구조입니다.</p>
     </header>
     <div class="schema-grid">
       <% if (!mariaTables.length) { %>
@@ -88,7 +87,7 @@
         </header>
         <div class="schema-card__body">
           <% if (!collection.fields.length) { %>
-          <p class="muted">샘플 문서를 찾을 수 없어 필드 정보를 추론할 수 없습니다.</p>
+          <p class="muted">샘플 문서를 찾을 수 없어 필드 정보를 추출할 수 없습니다.</p>
           <% } else { %>
           <ul class="schema-field-list">
             <% collection.fields.forEach(function (field) { %>
@@ -103,29 +102,4 @@
   </section>
 </section>
 
-<script>
-  (function () {
-    const tabs = document.querySelectorAll('.data-tab');
-    const panels = document.querySelectorAll('.data-panel');
-
-    tabs.forEach(function (tab) {
-      tab.addEventListener('click', function () {
-        const targetId = tab.getAttribute('data-target');
-        tabs.forEach(function (button) {
-          const isActive = button === tab;
-          button.classList.toggle('is-active', isActive);
-          button.setAttribute('aria-selected', isActive ? 'true' : 'false');
-        });
-        panels.forEach(function (panel) {
-          const isTarget = panel.id === targetId;
-          panel.classList.toggle('is-active', isTarget);
-          panel.toggleAttribute('hidden', !isTarget);
-          if (isTarget) {
-            panel.focus();
-          }
-        });
-      });
-    });
-  })();
-</script>
 <%- include('../partials/footer') %>
